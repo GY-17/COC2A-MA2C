@@ -1,0 +1,1608 @@
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 1
+Multi-agent Reinforcement Learning based Flexible
+Truck-drone Collaboration for Emergency Rescue
+Yu Guan, Chunli Zhu, Jing Ye, Lei Chen, and Anastasios Kouvelas
+Abstract—With the rapid development of Multi-agent Rein-
+forcement Learning (MARL), implement the truck-drone collab-
+oration could provide the efficient delivery of emergency supplies
+in the dynamic and uncertain post-disaster rescue. However, the
+sequential decision-making problem would naturally introduced
+the issue of sparse rewards, which would causing the training
+instability and the agents may select the selfish strategies. In
+this work, we propose a Multi-Agent Advantage Actor-Critic
+model with Multi-level Attribute Credit Assignment (MACA-
+MA2C) method, which follows the Centralized Training with
+Decentralized Execution (CTDE) framework. In the decentral-
+ized actor network, we design a flexible collaboration mechanism
+in which drones could continuously serve requests and land
+on any available truck, while trucks could passively wait for
+rendezvous without traveling to specific nodes.In the centralized
+critic network, we integrate the Transformer architecture to
+capture the complex spatiotemporal dependencies and introduce
+the MACA mechanism to explicitly evaluate the marginal contri-
+bution of each agent through counterfactual baselines. Extensive
+simulation results demonstrate the feasibility and superiority
+of our proposed method. Compared to MARL methods such
+as MADDPG, MAPPO and MA2C, our MACA-MA2C reduces
+the global average cost by 23.15% to 30.39% and improves the
+average task completion time by 1.68% to 3.19%. Moreover, it
+outperforms dynamic heuristic benchmarks by reducing average
+operational costs by 9.18% to 17.50% and accelerating compu-
+tation times by 25.97% to 73.71%. The source code is available
+at: https://github.com/CZhu0066/MACA-MA2C.
+Index Terms—Emergency rescue, Dynamic environment,
+Truck-drone collaboration, MARL, Credit assignment.
+I. INTRODUCTION
+N
+ATURAL disasters such as earthquakes and floods are of
+high suddenness and unpredictability, which would cause
+lasting and severe damage to the social economy and public
+safety [1]. The transportation system plays a critical role in the
+post-disaster rescue, for example, the delivery of emergency
+supplies e.g., drinking water, food, medicines) [2]. Under this
+This work was supported by the Natural Science Foundation of China
+(Grant No. 52302426), National Key Research and Development Program of
+China (Grant No. 2022YFB3207700), and the Fundamental Research Funds
+for the Central Universities (2024CX06100).
+Yu Guan and Lei Chen are with the School of Automation, Bei-
+jing Institute of Technology (Zhuhai), Zhuhai, China, 519088 (E-
+mail:3220241278@bit.edu.cn, bit chen@bit.edu.cn)
+Chunli Zhu is with the School of Mechatronical Engineering State
+Key Laboratory of Explosion Science and Safety Protection, Beijing In-
+stitute of Technology, Beijing 10081, China (Corresponding author, E-
+mail:chunlizhu@bit.edu.cn).
+Jing Ye is with the Xiningdong Vehicle Section, China Railway
+Qinghai-Tibet Group Co., Ltd., Xining, Xining, China, 810007 (E-mail:
+yejingxn@163.com).
+Anastasios Kouvelas is with Department of Civil, Environmental
+and Geomatic Engineering, ETH Z ¨urich, Z ¨urich 8093, Switzerland (E
+mail:kouvelas@ethz.ch)
+paradigm, truck and drone are representative ways but has
+varied features. Truck has large load capacity and long travel
+range, but cannot operate on damaged roads [3]. In contrast,
+drone features high maneuverability, yet are constrained by
+limited load capacity and battery capacity [4]. More recently,
+integrating trucks with drones is becoming an emerging way
+for post-disaster emergency rescue, which has high potential
+on achieving the reliable last-mile delivery [5]. For the concern
+of real-world emergency rescue, dynamic environment and its
+associated uncertainty challenges the truck-drone collaboration
+[6]. However, inefficient collaboration would reducing the
+operation efficiency and therefore leading to the counterpro-
+ductive effects [7].
+Truck-drone collaboration has been extensively investigated
+for a decade [8], which evolves from static and deterministic
+model to recent dynamic and stochastic model. [9] reviewed
+methods for drone-aided routing, which pointed out that the
+inadequate research to addressing the dynamic and uncertain
+factors of real-world applications. Previous work [10]–[12]
+mainly focused on the optimization of deterministic routes,
+which usually assume the location and demand of service
+node as well as the status of road network are fixed and
+already known before the optimization. For example, iterative
+optimization method [13], Mixed Integer Programming (MIP)
+model [14] and iterated greedy heuristic [15] have been
+employed to address the large scale truck-drone collaboration
+problem.
+For the issue of uncertainty, [16] integrated the uncertainties
+of wind direction and speed with a robust optimization model,
+which is a key factor for the target of drone delivering small
+parcels to remote islands. [17] investigate the issue of robust
+vehicle routing with drones under uncertain demands and
+truck travel times in humanitarian logistics, which utilize
+uncertainty sets to capture random deviations and guarantee
+solution feasibility. In [18]’s work, dynamic pickup problem
+is formulated as a Markov Decision Process (MDP) and
+then solved by a segment-based heuristic method. For the
+fixed time delivery service, the uncertainty is handled with
+sample average approximation and robust optimization [19].
+For dynamic demand and varied drone/truck status, a rolling
+horizon framework with adaptive large neighborhood search is
+developed [20]. [21] develops a two-stage stochastic optimiza-
+tion approach to handle the integrated scheduling problem.
+To overcome the issue of dynamic and uncertain envi-
+ronment, multi-agent reinforcement learning (MARL) based
+approaches become noticeable since the occurrence of Al-
+phaGo [22]. It has achieved great success in scenarios such
+as large-scale traffic signal control [23], uncertain demand
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 2
+response for urban logistic service [24] and Stochastic Vehicle
+Routing Problem (SVRP) [25]. Typical algorithms including
+Multi-Agent Deep Deterministic Policy Gradient (MADDPG),
+Multi-Agent Proximal Policy Optimization (MAPPO), and
+Multi-Agent Advantage Actor-Critic (MA2C), in which cen-
+tralized training with a designed global reward is conducted
+for the decentralized execution inference to make optimized
+decision under complicated scenarios. In the field of logistics,
+centralized MARL has been proven to be effective for dynamic
+multi-vehicle pickup and delivery problem [26]. Specifically
+for the truck-drone collaboration, [27] developed an event-
+driven framework for post-disaster rescue with MADDPG,
+which is a typical and challenging long sequential task. Mean-
+while, the environment typically generates scalar feedback
+only at critical junctures such as successful delivery of supplies
+or mission termination due to power depletion, leading to
+the sparse rewards issue [28]. Under such delayed and sparse
+global feedback signals, Markov decision processes struggle
+to effectively address the credit assignment problem in task
+execution [29]. That credit assignment leads to fluctuations in
+policy gradients and low sample efficiency [30] and makes
+agents highly susceptible to suboptimal local selfish policies,
+which ultimately causing the collapse of the entire heteroge-
+neous vehicle fleet’s coordination.
+In this work, we propose a flexible truck-drone collab-
+oration method for emergency rescue under dynamic en-
+vironment, which is called as the Multi-Agent Advantage
+Actor-Critic with Multi-level Attribute Credit Assignment
+(MACA-MA2C). A MARL framework is designed for truck-
+drone collaboration, integrating a multi-level credit assignment
+mechanism that explicitly distinguishes individual agent con-
+tributions, thereby effectively overcoming the bottlenecks of
+sparse rewards in long sequential tasks. Extensive tests are
+conducted based on the OpenAI Gym platform. The main
+contributions of this work could be summarized as follows:
+We propose a flexible truck-drone collaboration method
+for the emergency rescue, i.e., the MACA-MA2C, which
+includes the decentralized actor and centralized critic net-
+work. Here, flexible cooperation strategies are designed
+within the decentralized actor network, where the drone
+agent could continuously serve request nodes and land
+on any truck, and truck agent could passively wait for
+the arriving of drones rather than traveling to rendezvous
+point for collection.
+•We leverage the Transformer architecture into the cen-
+tralized critic network to capture global spatiotempo-
+ral dependencies among heterogeneous agents. We also
+integrated a Multi-level Attribute Credit Assignment
+(MACA) mechanism that computing counterfactual base-
+lines for both single agent and all agents, which could
+effetively stabilizing the policy gradient under the cir-
+cumstance of sparse rewards.
+•Extensive simulation experiments validate the superiority
+and robustness of the proposed method. Results indicate
+that MACA-MA2C outperforms MARL baselines (e.g.,
+MAPPO, MADDPG) and heuristic algorithms in mini-
+mizing global costs and accelerating task completion.
+The remainder of this paper is organized as follows. Section
+II reviews related works. Section III demonstrates the proposed
+MA2C-MACA algorithm. Section IV illustrates the results of
+numerical experiments. Section V finally discuss and summa-
+rize this work.
+II. RELATEDWORKS
+In the framework of multi-agent system, agents interact,
+collaborate, or compete to slove the complex and large-scale
+task. In early Independent Q-Learning (IQL), each agent treats
+other agents as part of the environment and update with
+their local reward based on its own observation. In [31]’
+work, they model a relatively large traffic network as a multi-
+agent system and employed the Q-learning algorithm, which
+achieving superior performance compared to traditional fixed-
+timing methods. Besides, [32] proposes a deep Q-network
+with Q-value transfer for adaptive multi-intersection signal
+control and each agent searches the optimal strategy to control
+its intersection. In the IQL regime, all agents are assumed
+to make decisions at static environment, however, increasing
+complexity of tasks & number of agents will inevitably result
+in the non-convergence of training [33].
+To overcome that challenge, Centralized Training with De-
+centralized Execution (CTDE) framework has been proposed,
+in which a centralized critic utilizes global information during
+the training phase to eliminate environmental uncertainty,
+while agents make decisions with their local observations dur-
+ing the execution phase [34]. In the study of large-scale traffic
+control, [35] validated that MA2C which incorporates neigh-
+bors’ information to estimate the global advantage function
+could effectively capture spatiotemporal dependencies, which
+exhibit high stability compared to IQL. Similarly, MADDPG
+approximates the global Q-value by inputting joint actions into
+the critic to guide deterministic policies and shows remarkable
+success in traffic signal control on urban road network [36]
+and large-scale crowd path planning [37]. Meanwhile, MAPPO
+utilizes a centralized value function to reduce policy gradient
+variance within a trust region, which verify its effectiveness
+on autonomous vehicles [38] and internet of vehicles system
+[39].
+Nevertheless, CTDE still faces strict action constrains com-
+mon challenge when applying it to various complex real world
+scenarios. For example, the strict physical constrains like
+drone’s max battery, max capacity and road accessibility in the
+emergency rescue [40]. Agents often attempt to explore large
+action space, which may choose physically infeasible actions
+and resulting in low search and training efficiency [41]. Then,
+action masking has been proved useful which not only ensures
+the safety of decision but also accelerates the algorithm’s
+convergence speed by decreasing the search space. [42] has
+proved action mask is a necessary condition for solving large-
+scale constrained multi-agent problems, which can improve the
+convergence speed of the algorithm under complex constraints
+by several times. [27] directly masking the invalid actions at
+the output layers of the actor network, therefore the agent can
+sample within the feasible areas. The set up of action masking
+not only ensures the safety of decision but also accelerates the
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 3
+algorithm’s convergence speed by decreasing the search space.
+However, collaboration mechanism in current work strictly
+requires drones return to a fixed truck, whilst trucks are forced
+to specific rendezvous nodes for drone collection.
+In CTDE, the critic network needs to process the global state
+that contains all agents information. Facing such information,
+traditional critic Fully Connected (FC) Network struggles to
+get effective solutions because it processes all input features
+indiscriminately, which causing critical information to be
+overwhelmed by a large amount of irrelevant data [43]. The
+attention mechanism and Transformer architecture effectively
+solve this problem by disregarding irrelevant details, thereby
+allowing for better model generalization when facing unexpe-
+rienced task changes [44]. Building on those advantages, [45]
+incorporated multi-head attention mechanisms into the actor-
+critic architecture to effectively capture spatial dependencies
+in Unmanned aerial vehicles (UA Vs) and unmanned ground
+vehicles (UGVs) cooperative routing problem. Specifically, the
+self-attention mechanism distinguishes important information
+from useless noise, thereby transforming the high-dimensional
+and complex global state space into a compact global embed-
+ding for the critic network [46]. Furthermore, [47] shows the
+self-attention mechanism can improve the representation of
+state and generalization of algorithm in cooperative navigation,
+multi predator-prey, cooperative treasure collection and multi
+speaker-listener environment.
+In flexible truck-drone collaboration, a successful task typ-
+ically depends on a long sequence of complex coordination
+dynamics. For instance, while a truck stopping at a node
+might appear to be an idle and negative behavior, it is
+actually a crucial collaborative step to pick up a drone that
+is about to run out of power. If only use global reward [48],
+the system will have difficulty in distinguishing which key
+action led to success or failure, which is primarily due to
+the delayed and sparse environmental feedback. Otherwise,
+if only using local reward [49], the agent will focus on the
+quality of their own behavior and ignore the overall effect
+of team collaboration. [50] shows that this ambiguity in the
+feedback signal will result in high variance of the policy
+gradient, which in turn will cause the training to fail to
+converge or converge to a suboptimal solution. To quantify
+each agent’s marginal contribution and effectively suppresses
+gradient variance, [51] first proposed counterfactual multi-
+agent policy gradient (COMA) with a counterfactual baseline.
+In [52]’s work, they address the credit assignment and non-
+stationary challenges by performing an additional counterfac-
+tual trajectory based on the learned world mode, which enables
+accurate credit allocation in long-range tasks. Recent research
+begun to explore spatiotemporal joint credit allocation. For
+example, [53] tackle cooperative MARL credit assignment
+by introducing a MACA scheme that decomposes the team
+advantage into individual, subgroup and global components
+via attention-based counterfactual reasoning, which achieving
+superior performance on challenging StarCraft benchmarks.
+Furthermore, in the context of cooperative air-ground delivery,
+[54] employ a hierarchical reinforcement learning framework
+guided by internal reward mechanisms to address the credit
+assignment problem address the credit assignment problem.
+Despite those advances, how to addresses the sparse-reward
+credit assignment with spatiotemporal dependency modeling in
+a fully flexible truck-drone collaboration still remains further
+investigation.
+III. METHOD
+In this work, we propose a MACA-MA2C framework
+for the fully flexible truck-drone collaboration of emergency
+rescue under dynamic request. Within MA2C, every truck and
+drone is regarded as an agent, i.e., distributed actor; MACA
+mechanism is introduced to the centralized critic network.
+Overall framework of the proposed MACA-MA2C method is
+illustrated in Fig. 1.
+A. Problem statement
+The target emergency rescue scenario is shown in the
+upper right of Fig. 1, where trucks and drones are served
+as transportation tools for post-disaster rescue request. They
+have different maneuverability and load-carrying capacity, in
+which the purpose of collaboration between drone and truck
+is to collect goods from trucks and recharge on them. When
+road has been damaged, request cannot be responded by truck,
+while drones are also restricted by load demand. Besides,
+power limitation forces drone to shuttle between destination
+and nearby trucks for the task of load-carrying and charging.
+Each request node has varied requirement and deadline, while
+new request nodes are generated randomly at any time.
+For simplification as well as the real-world drone take-
+off/landing capability, we made following assumptions: (1)
+Truck and drone agents have full access to the complete status
+information of all pending service nodes. (2) The truck cannot
+move to the next service node until all rendezvous drones have
+been collected. (3) The time for goods loading and unloading
+as well as the recharging time are ignored. (4) Drones can only
+take off after the truck arrives at one node, and may return to
+any available truck.
+We formulate the problem as a Markov decision process
+as<S,A,P,R,γ >. LetK TR andK DR denote the sets
+of truck and drone agents, respectively, wherek∈ K TR
+represents a specific truck agent andℓ∈K DR represents a
+specific drone agent. The decision-making is an event-driven
+process, namely, the next decision event is triggered only after
+the completion of a previous one. The subscripttindicates
+the decision time of each agent. Details on state space,
+action space, reward function and state transition equation are
+discussed as follows.
+(1) State spaceS: Global stateS t of the environment is
+formed by each agent’s local states. Local state of the truck
+agents TR
+t,k and the drone agents DR
+t,ℓ consists of their own
+statusx t and the status of all nodes that pending serviceC t =
+{ct,i}i∈N , which could be written as,
+sTR
+t,k =
+ 
+xTR
+t,k,Ct,Tt
+
+,
+wherex TR
+t,k =
+
+MTR
+t,k ,P TR
+t,k ,GTR
+t,k,RTR
+t,k,W TR
+t,k
+ (1)
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 4
+ 
+Fig. 1. The overall framework of the MACA-MA2C method.
+sDR
+t,ℓ =
+ 
+xDR
+t,ℓ ,Ct,Tt
+
+,
+wherex DR
+t,ℓ =
+
+MDR
+t,ℓ ,P DR
+t,ℓ ,GDR
+t,ℓ ,RDR
+t,ℓ ,W DR
+t,ℓ ,EDR
+t,ℓ ,HDR
+t,ℓ
+
+(2)
+ct,i = (Qi,Li,Ut,i,Di)(3)
+St =
+ 
+{sTR
+t,k}k∈KT R,{sDR
+t,ℓ}ℓ∈KDR,Ct,T t
+
+(4)
+whereT t is the current global simulation step, and other
+detailed definitions of the state variables of agents and service
+nodes are listed as in Table I.
+(2) Action spaceA: The executed action is determined by
+one agent’s current state constraints and the priority protocol.
+For truck agent, the action space is designed with two types,
+i.e., service and wait. The action priority is set as ”waiting ¿
+service”, which is due to the necessity of prioritizing drone
+recovery to replenish their energy for continuous operations,
+thereby maximizing the overall fleet efficiency. Action space
+of the truck could be written as,
+aTR
+t,k =
+
+J srv
+t,k,I wait
+t,k
+
+(5)
+whereJ srv
+t,k ∈Nis the set of nodes to be served for truckk
+att, srv is the abbreviation of service;I wait
+t,k ∈{0,1}is the
+binary control command for truckkatt, denoteI wait
+t,k = 1as
+waiting for drones, otherwiseI wait
+t,k = 0.
+For drone agent, The action space of a drone is designed
+with three types, i.e., service, collection, and carried by a truck.
+The action priority is set as ”service request node ¿ collection ¿
+carried by truck”, which is due to the strategy of maximizing
+resource utilization by encouraging drones to actively serve
+requests rather than remaining idle on trucks. Action space of
+the drone could be written as,
+aDR
+t,ℓ =
+
+J srv
+t,ℓ ,K rnd
+t,ℓ ,I cont
+t,ℓ
+
+(6)
+whereJ srv
+t,ℓ is the set of nodes to be served for droneℓatt;
+K rnd∈K TR is the set of all trucks;I cont
+t,ℓ ∈{0,1}is the
+binary control command, denoteI cont
+t,ℓ = 1as carried by the
+truck to the next service node andI cont
+t,ℓ = 0as flying to the
+next service node.
+(3) Reward functionR: Global reward is defined as the sum
+of all local rewardsR t =P
+irt,i. To balance the operational
+efficiency and service quality, local rewardr t,i is designed
+with three components, i.e., movement cost, service incentive
+and wait introduced coordination penalty, which could be
+written as,
+rt,i =−ψ d·dt,i| {z }
+Movement
++r serve
+t,i|{z}
+Service
++−ψw·τwait| {z }
+Wait
+(7)
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 5
+TABLE I
+DEFINITION OFSTATEVARIABLES
+Symbol Feature Description
+Mt Mode
+Discrete operation status of each agent:
+0 (In Transit), 1 (Waiting), 2 (Service
+Completed), 3 (Idle/On-Truck).
+Pt Position
+Index of the current node’s position. If
+agent is in Mode 0,P t indicates the last
+visited node.
+Gt Goal
+Index of the target node. If agent is
+in Mode 1 or Mode 3,G t is agent’s
+current node.
+Rt Remaining Time
+Remaining travel time to reach the goal.
+Rt >0only when in transit; otherwise
+Rt = 0.
+Wt Payload Current weight of relief items carried
+by the agent.
+Et Battery Current remaining energy (Drone only
+indicator).
+Ht Host
+Index of the hosted truck.H t =−1
+refers to drone flying independently.
+(Drone only indicator).
+Qi Demand The quantity of materials required by
+the served nodei.
+Li Deadline Service deadline timestamp for nodei.
+Ut,i Request Status Status of dynamic request node: -1 (Un-
+revealed), 1 (Active), 0 (Fulfilled).
+Di Access Di = 1indicates the node is only ac-
+cessible by drones; Otherwise,D i = 0.
+whereψ d andψ w are the weighting coefficients for travel
+distance and waiting time , respectively;d t,i is the travel
+distance;τ wait is the waiting duration.
+The service termr serve
+t,i incentivizes timely delivery relative
+to the deadlineL j while penalizing failures:
+rserve
+t,i =
+(
+β−ψ t·max(0,T arr−Lj),if success,
+−β,if failure. (8)
+whereT arr is the arrival time;ψ t is the time sensitivity factor.
+(4) State transition equationP: We divided the state tran-
+sition into three modes, they are, no decision during trucks
+and drones’ ongoing task, proactive decision with the task
+completion of each agent, and forced decision triggered by
+drone’s rendezvous request. They are illustrated in detail as
+follows.
+•(a) No decision during trucks and drones’ ongoing task:
+At this stage, state of each agent remain the same. If
+Mt = 0,R t decreases over time while position and
+payload remain unchanged. IfM t = 1,R t = 0, position
+and payload remain unchanged.
+•(b) Proactive decision with the task completion of each
+agent: WhenM t ∈{2,3}, if the agent going to serve
+nodej, the state transform toM t+1 = 0andG t+1 =j.
+WhenM DR
+t,ℓ = 2, if the drone continuously serves nodej,
+the state will switch toM DR
+t+1,ℓ = 0andG DR
+t+1,ℓ =j; if it
+return to a rendezvous truckk,M DR
+t+1,ℓ = 0andG DR
+t+1,ℓ =
+PTR
+t,k (MTR
+t,k ∈{1,2,3}),G DR
+t+1,ℓ =G TR
+t,k (MTR
+t,k ∈{0}).
+WhenM DR
+t,ℓ = 3and drone choose to remain on the
+truck, the state remain unchanged andP DR
+t+1,ℓ =P TR
+t+1,k.
+•(c) Forced decision triggered by drone’s rendezvous re-
+quest: When a truck agent is selected as a rendezvous
+target, upon completing its current task, its state is forced
+toM TR
+t+1,k = 1until it converges with all incoming drones
+(i.e.,P DR
+t,ℓ =P TR
+t,k ). Once rendezvous, the drone’s battery
+is fully swapped, and any residual payload is back to the
+truck:
+EDR
+t+1,ℓ←E max, W TR
+t+1,k←W TR
+t,k +W DR
+t,ℓ (9)
+B. Framework of MA2C
+Based on the setting of MARL model in section III-A,
+details on decentralized actor and centralized critic are demon-
+strated in this part.
+(1) Decentralized Actor
+As shown in the decentralized actor part of Fig. 1, we
+separately designed the truck agent and drone agent as in
+the previous part. Each agent export its action by a local
+policy networkπ θ, whereθis the set of parameters. Network
+inputs of truck agent and drone agent areo i,t ≡s T
+t,k and
+oi,t ≡s D
+t,ℓ, respectively. The network is firstly consists of
+two fully connected (FC) layers with Relu activation and
+an LSTM unit, in which LSTM is designed to capture the
+correlations in historical trajectories to address the partially
+observable problem in dynamic scenarios. Then, the network
+of truck agent branches into multi-head, for which multi-
+head for truck are routing and mode heads, and drone agent
+branches into service, rendezvous and mode heads. Finally, an
+action constraint masking is designed to ensure the action’s
+feasibility.
+The action constraint masking compute the subset of each
+agent’s valid actions by checking their physical limits. For
+trucks, the feasible setN TR
+t,k is determined by the node’s
+service status, road accessibility, and the truck’s remaining
+payload. For drones, the feasible setN DR
+t,ℓ is strictly limited by
+the node’s service status, payload capacity, and battery energy
+reachability.N TR
+t,k andN DR
+t,ℓ could be expressed as,
+NTR
+t,k =
+
+i∈N|U i
+t = 1, Di = 0, Qi≤W TR
+t,k
+	
+NDR
+t,ℓ =
+
+i∈N|U i
+t = 1, Qi≤W DR
+t,ℓ ,Φ(P DR
+t,ℓ ,i) = 1
+	
+(10)
+whereΦ(P DR
+t,ℓ ,i) = 1reflects the drone has sufficiency battery
+to serve the request node and return back.
+Denotem i,t∈[0,1]based on the feasible setsN TR
+t,k and
+NDR
+t,ℓ as a binary vector to filter out invalid actions, which
+reads
+P(ai,t|oi,t) =Softmax(Logits(o i,t) + (1−m i,t)·(−∞))
+(11)
+where Logits(o i,t)is the last layer output before softmax
+normalization;m i,t = 0represents the action is invalid.
+In the data collection phase, the complete transition tuple
+⟨St,ot,at,rt,mt,πt⟩is stored in the on-policy replay buffer
+B. The global stateS t in the buffer will be used as the input
+of the followed critic network, while the local rewardr t will
+be used to calculate the global rewardR t as the target for its
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 6
+update. Additionally,at andπ t will be used for the calculation
+of the MACA mechanism of the critic network.
+(b) Centralized Critic
+For the centralized critic part in Fig. 1, the global ob-
+servationS t ={o 1,t,o 2,t,...,o N,t}is transformed into a
+single, fixed-length global state embeddingz s by Multi-Head
+Self-Attention(MHSA). MHSA consists of high-dimensional
+embeddings and a mean-pooling.
+For the centralized critic part in Fig. 1, the global observa-
+tionS t ={o 1,t,o 2,t,...,o N,t}is transformed into a single,
+fixed-length global state embeddingz s, which aggregates
+the features of all agents. Firstly, through the process of
+embedding and a stack of Transformer Encoder blocks to
+dynamically capture the spatial and temporal dependencies
+among agents, the dimension of the global observation is
+projected from(B,N,G dim)to(B,N,d model), whereB
+represents the batch size,Ndenotes the number of agents,
+Gdim is the raw feature dimension, andd model indicates the
+hidden embedding dimension. Subsequently, a MeanPooling
+layer is applied to obtain the final global state embeddingz s
+with a dimension of(B,d model), which serves as the input
+for MACA mechanism. It could be expressed as followed.
+zs =MeanPooling(Transformer(St))(12)
+C. MACA Mechanism and network update
+By calculating individual counterfactual and joint baselines,
+MACA mechanism separately evaluates the marginal contri-
+bution of the agent’s own action and the overall contribution
+of the truck-drone collaborative team. The complete training
+procedure is summarized in Algorithm 1.
+Based on the global embeddingz s, the criticQ ϕ which
+employs a linear decomposition architecture branches into
+two distinct heads : a value head that outputs a state-value
+scalarV(z s)and a weight head that generates an action-
+weight vectorw(z s). The joint Q-value is formulated as:
+Qϕ(zs,x) =V(z s) +w(zs)⊤x. Leveraging this architecture,
+we explicitly construct three specific valuesa t,π t andc i,t to
+get the advantage function.
+The realized Q-value is computed using the actual executed
+one-hot joint action vectora t, which reads,
+Qϕ(zs,at) =V(z s) +w(zs)⊤at (13)
+The joint baselineb Jnt is calculated using the joint policy
+probability vectorπ t cached from buffer, which could be
+written as,
+bJnt(zs,πt) =V(z s) +w(zs)⊤πt (14)
+To quantify the specific contribution of agenti, we construct
+an individual baselineb Ind based on a counterfactual vector
+ci,t = (a−i,t∪πi,t), where agenti’s action is replaced by its
+policy distributionπ i,t while others remain fixed as one-hot
+actionsa−i,t. Individual baseline could be expressed as,
+bInd(zs,ci,t) =V(z s) +w(zs)⊤ci,t (15)
+Algorithm 1MACA-MA2C for Truck-Drone Collaborative
+Routing
+Require:Max episodesM, stepsT, discountγ, learning rates
+αθ,αϕ, entropy coeffα, MACA weightsψ joint,ψind.
+1:InitializeActor networksπ θi for each agenti∈K(where
+K=K TR∪KDR) and Centralized Transformer CriticQϕ.
+2:forepisodee= 1toMdo
+3:Reset env, get initial global stateS 0 and local obser-
+vationso 0 ={o i,0}i∈K.
+4:B←∅.
+5:fort= 0to max-episode-lengthdo
+6:foreach agenti∈Kdo
+7:Generate valid maskm i,t based on constraints
+(Eq. 10).
+8:Sample actiona i,t and store probπ i,t from
+πθi(·|oi,t,mi,t)(Eq. 11).
+9:end for
+10:Execute joint actiona t, observe rewardsr t =
+{rt,i}.
+11:Store transition⟨S t,ot,at,πt,rt,mt⟩inB.
+12:end for
+13:/* Training Phase */
+14:Compute target returnsR t (Eq. 18):
+15:Update Critic:
+16:Calculate global embeddingz s (Eq. 12).
+17:Minimize lossL critic (Eq. 17).
+18:Update Actors via MACA:
+19:foreach time stept∈Bdo
+20:Obtain Critic outputs: ValueV(z s)and Weights
+w(zs).
+21:Calculate Joint Baseline:b Jnt(zs,πt)(Eq. 14).
+22:foreach agenti∈Kdo
+23:Construct Counterfactual Vector:c i,t =a−i,t∪
+πi,t.
+24:Calculate Individual Baseline:b Ind(zs,ci,t)
+(Eq. 15).
+25:Compute AdvantageA i,t (Eq. 16)
+26:Compute lossL actor(θi)(Eq. 19) and accumu-
+late gradients∇ θiLactor.
+27:end for
+28:end for
+29:Update allθ i using optimizers.
+30:Clear bufferB.
+31:end for
+The multi-level advantageAi,t is then derived by comparing
+the realized Q-value against a weighted combination of these
+baselines, which reads,
+Ai,t =Q ϕ(zs,at)−
+ 
+ψjoint·bJnt(zs,πt) +ψind·bInd(zs,ci,t)
+
+(16)
+whereψ joint andψ ind are weighting coefficients that balance
+the relative importance of the joint team baseline and the
+individual agent baseline, respectively.
+The network parameters are updated end-to-end by mini-
+mizing the prediction error of the critic against realized returns
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 7
+and optimizing the actor policies using the advantages derived
+from MACA. For the centralized critic, We employ the N-step
+bootstrapped returnR t as the target value to capture long-
+term dependencies. The Centralized Critic minimizes the Mean
+Squared Error (MSE) between the estimated Q-values and the
+target return, which could be written as,
+Lcritic(ϕ) = 1
+|B|
+X
+t∈B
+(Rt−Qϕ(zs,at))2 (17)
+Rt =
+T−t−1X
+k=0
+γkrt+k +γ T−tV(zsT )·(1−d T )(18)
+whered T indicates whether the episode terminates.
+Simultaneously, the decentralized actors are updated via the
+policy gradient method using the calculated advantagesA i,t.
+To prevent premature convergence, we incorporate an entropy
+regularization termHwith a coefficientα, which could be
+expressed as,
+Lactor(θ) =− 1
+|B|
+X
+t∈B
+X
+i∈K
+(logπi(ai,t|oi,t)Ai,t +αH(πi(·|oi,t)))
+(19)
+IV. RESULTS
+A. Experimental Settings
+To evaluate the performance of our algorithm, we adopt
+the standard test instances from [55] to generate basic road
+network information. Regarding the generation of dynamic
+requests, we convert the static Agatz dataset into dynamic
+scenarios following the dynamic update framework described
+by [56] and introduce the concept of the dynamic request
+rateρ dyn to reflect the proportion of dynamic request to total
+request [57]. For instance,ρ dyn = 0.3refers to that 30%
+of customer requests emerge randomly during the simulation
+as dynamic requests. During training and evaluation, the
+temporal window for dynamic requests generation is defined as
+[Tstart,T end] = [α minT,α maxT], whereTdenotes the episode
+horizon andα min,α max represent the lower and upper release
+fractions, respectively. Furthermore, to demonstrate the ne-
+cessity of truck-drone collaboration, we set the road damage
+ratioη= 0.2, which indicating that 20% of the nodes are
+damaged that impassable for trucks and require drones to
+provide service.
+Specifically, as shown in Fig. 2, we select the 1-center
+class of instances, which mimics a circular city center where
+customer locations follow a normal distribution around the
+distribution depot. To ensure realistic travel times and battery
+consumption, the dataset’s original dimensionless coordinates
+are proportionally scaled to a15km×15km service area.
+The map grid on the left side of the interface clearly marks
+the spatial distribution of the depot and the customers, while
+simultaneously displaying the details routes of the truck-
+drone collaboration in real time. The right side is divided
+into two main functional modules, (1) mission log module: it
+dynamically tracks task allocation and execution progress; (2)
+requests overview module: it clearly displays the completion
+status of static and dynamic requests and simultaneously marks
+the service deadlines for each requirement. When all rescue
+tasks are completed, the interface will automatically switch
+to the task completion page, which centrally displays key
+statistical indicators such as the number of service nodes, total
+reward, total cost, and delay penalties.
+Following the relative speed assumption in [55] and the cost
+parameters based on [58], we set the travel speed for trucks
+and drones to 30 km/h and 60 km/h, and their operational costs
+to 0.083 $/min and 0.021 $/min, respectively. Consistent with
+[59], the travel distances between any two nodes are measured
+using the Manhattan distance for trucks and the Euclidean
+distance for drones. The service deadline for all request nodes,
+regardless of being static or dynamic, are generated using the
+standard methodology outlined in [60]. Parameters for both
+the simulation environment and the algorithm configuration
+are defined as in Table II.
+(a) Real-time visualization of collaborative routing
+(b) Statistical summary of task completion
+Fig. 2. The visualization platform interface.
+B. Comparison with benchmark methods
+To benchmark the performance of the multi-agent DRL
+algorithm proposed in our study, we have implemented several
+static and dynamic methods. For the static experiment, we
+assume all information are known in advance and cast the
+resulting problem a Mixed Integer Programming (MIP) model
+modified from that introduced in [27], which is solved using
+Gurobi. For the dynamic experiment, we compare with two
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 8
+TABLE II
+SIMULATIONPARAMETERS ANDALGORITHMCONFIGURATION
+Category Parameter / Description Value
+Simulation
+Simulation area size15km×15km
+Episode horizon (T) 300 min
+Fleet size (Trucks / Drones) 5 / 5
+Vehicle velocity (vt,v d) 30 km/h, 60 km/h
+Max payload (W t,W d) 1000 kg, 80 kg
+Truck, drone travel cost per
+minute (c t,c d)
+0.083 $/min,
+0.021 $/min
+Drone max battery (E max) 50
+Dynamic request rate (ρ dyn) 0.3
+Road damage ratio (η) 0.2
+Dynamic request temporal
+window
+[0.2T,0.6T]
+Delay penalty weight (ωdelay) 0.8
+Algorithm
+Training episodes 1500
+Discount factor (γ) 0.95
+Batch size 60
+Actor learning rate1×10 −4
+Critic learning rate3×10 −4
+Entropy Coefficient (Anneal-
+ing)
+0.005→0.001
+Joint Baseline Weight (ψ joint
+)
+0.4
+Individual Baseline Weight
+(ψind)
+0.6
+Actor LSTM Units 64
+Critic Transformer Layers 2
+Critic Attention Heads 4
+Critic Embedding Dim
+(dmodel)
+128
+dynamic routing methods: (i) the ALNS-based rolling algo-
+rithm, a method that integrates adaptive large neighborhood
+search [59] and the rolling horizon framework [61]; (ii) the
+Gu’s algorithm [18], an extended heuristic approach for the
+dynamic TSPD.
+We analyze the performance of the MACA-MA2C algo-
+rithm by comparing with the solutions obtained by solving the
+MIP model using Gurobi. The optimal value of the MIP model
+provides a lower bound for the total cost to establish a clear
+performance baseline. The comparison results are summarized
+in Table III, which reports the total cost, computation time, and
+the percentage gap for each instance. Here, the percentage gap
+is calculated as(Cost MACA-MA2C−Cost MIP)/CostMIP×100%.
+For Gurobi, we set a computation time limit of 7200 seconds
+and indicate by “—” if it fails to find a solution within this
+limit. Table III shows that while Gurobi’s computation time
+grows exponentially and cannot find the optimal solution for
+any instance with 20 instances, MACA-MA2C completes all
+inferences in under 4 seconds. For the successfully solved
+instances, our algorithm demonstrates a optimality gap ranging
+from 3.28% to 8.65%. Additionally, this gap further decreases
+as the road damage ratio (η) increases, likely because restricted
+truck accessibility shrinks the decision space and helps the
+algorithm converge more efficiently.
+To evaluate dynamic performance, we benchmark MACA-
+MA2C against ALNS and Gu’s algorithm, with detailed results
+TABLE III
+PERFORMANCE COMPARISON OF THEMACA-MA2CALGORITHM
+AGAINST THEMIPMODEL
+n η Cost ($) Time (s) Gap (%)
+MIP MACA-
+MA2C MIP MACA-
+MA2C
+5
+0.1 4.16 4.52 0.91 0.80 8.65%
+0.3 4.43 4.74 0.37 0.82 6.95%
+0.5 4.98 5.19 0.14 0.86 4.27%
+10
+0.1 5.27 5.67 1101.15 1.50 7.50%
+0.3 5.45 5.69 111.49 1.48 4.44%
+0.5 5.63 5.81 5.33 1.42 3.28%
+20
+0.1 – 17.63 – 3.02 –
+0.3 – 18.32 – 2.94 –
+0.5 – 14.11 – 3.33 –
+presented in Table IV. Overall, MACA-MA2C exhibits advan-
+tages in both total cost and computational efficiency. In terms
+of total cost, our algorithm achieves maximum reductions of
+40.19% and 39.66% compared to ALNS and Gu’s algorithm,
+respectively. It is worth noting that in a few specific low
+dynamism scenarios, the MACA-MA2C algorithm does not
+perform as well as the other two comparison algorithms.
+Nonetheless, our algorithm accelerates the decision making
+process across all instances, yielding maximum computation
+time savings of 95.6% against ALNS and 50.87% against Gu’s
+algorithm.
+Moreover, distinct performance trends emerge as the dy-
+namic request rate (ρ dyn) increases. While a higherρ dyn
+naturally introduces more unforeseen requests that drive up
+the total cost for all methods, MACA-MA2C consistently
+maintains a much lower cost growth rate. That performance
+demonstrates its effectiveness in highly dynamic environments,
+which potentially due to its capability to learn complex spa-
+tiotemporal dependencies and adapt from past experiences.
+Similarly, our algorithm shows superiority as the road damage
+ratio (η) increases. Since a higherηseverely restricts truck
+mobility and creates a greater reliance on drones for last
+mile deliveries, MACA-MA2C adeptly reallocates multi-agent
+resources to handle this challenge. By instantly adjusting the
+flexible collaborative routes, it effectively accommodates the
+disrupted road network.
+To verify the effectiveness and superiority of the pro-
+posed MACA-MA2C algorithm in emergency rescue under
+dynamic environment, this part designs a comparative exper-
+iment and analyzes the training convergence and evaluation
+performance under different environmental configurations. We
+compare MACA-MA2C with three mainstream multi-agent
+reinforcement learning algorithms, including the MADDPG
+[27], MA2C [35] and the MAPPO [62]. To ensure the fairness
+of the comparison, all algorithms are trained in the same
+simulation environment, a square service area of 15 km ×
+15 km, which contains a distribution center (depot) and 30
+randomly distributed nodes (customers).
+Fig. 3 shows the cumulative reward trend of each algorithm
+during the 1500 training episodes. The proposed MACA-
+MA2C (Transformer) performed the best among the MAD-
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 9
+TABLE IV
+PERFORMANCE EVALUATION COMPARED WITH DYNAMIC HEURISTIC METHODS
+n η ρ dyn
+ALNS Gu’s Algorithm MACA-MA2C (Ours) Gap
+Cost ($) Time (s) Cost ($) Time (s) Cost ($) Time (s)Gap 1 Gap2 Gap3 Gap4
+50
+0.1
+0.2 59.02 18.23 44.97 10.35 47.09 7.94 -25.32% -56.44% 4.51% -23.25%
+0.5 40.47 19.80 35.18 11.62 35.05 7.37 -15.46% -62.77% -0.36% -36.59%
+0.7 47.05 22.55 40.62 10.65 35.21 7.62 -33.65% -66.22% -15.38% -28.46%
+0.3
+0.2 49.10 19.00 42.53 10.45 39.66 6.65 -23.80% -65.01% -7.24% -36.39%
+0.5 36.93 20.08 31.77 10.88 29.67 7.68 -24.49% -61.73% -7.10% -29.36%
+0.7 36.44 24.41 32.13 10.54 29.68 8.15 -22.76% -66.62% -8.26% -22.71%
+0.5
+0.2 50.20 19.31 36.15 10.44 35.81 6.97 -40.19% -63.93% -0.97% -33.30%
+0.5 33.80 20.02 26.57 10.36 26.27 7.85 -28.69% -60.77% -1.17% -24.22%
+0.7 29.50 24.19 25.61 9.74 23.72 8.54 -24.36% -64.72% -7.97% -12.36%
+100
+0.1
+0.2 151.32 275.07 129.40 16.59 134.45 12.05 -12.55% -95.62% 3.75% -27.38%
+0.5 80.46 62.35 73.68 18.14 71.63 12.87 -12.32% -79.36% -2.86% -29.04%
+0.7 65.62 29.88 68.24 19.43 60.42 13.65 -8.60% -54.32% -12.93% -29.75%
+0.3
+0.2 145.01 235.35 140.57 17.74 130.31 12.23 -11.28% -94.80% -7.87% -31.05%
+0.5 75.95 81.38 75.54 17.96 67.48 13.11 -12.54% -83.89% -11.94% -27.00%
+0.7 60.58 29.31 62.61 19.20 54.29 13.99 -11.60% -52.25% -15.33% -27.13%
+0.5
+0.2 150.59 252.91 149.05 17.14 134.46 13.75 -12.00% -94.56% -10.86% -19.76%
+0.5 74.31 64.21 68.51 17.47 64.41 13.65 -15.37% -78.74% -6.36% -21.86%
+0.7 57.09 34.87 66.38 17.20 51.61 14.18 -10.60% -59.34% -28.62% -17.55%
+250
+0.1
+0.2 238.98 283.62 253.62 29.30 257.91 28.80 7.34% -89.85% 1.67% -1.71%
+0.5 279.91 181.42 262.67 39.84 246.51 26.28 -13.55% -85.51% -6.56% -34.02%
+0.7 299.62 94.14 238.73 55.85 227.65 27.44 -31.61% -70.85% -4.86% -50.87%
+0.3
+0.2 243.76 543.44 283.75 32.57 269.90 27.37 9.68% -94.96% -5.13% -15.96%
+0.5 225.88 203.81 200.11 42.56 193.59 28.40 -16.68% -86.06% -3.36% -33.26%
+0.7 288.83 72.33 227.44 51.68 219.79 28.59 -31.41% -60.47% -3.48% -44.68%
+0.5
+0.2 273.06 272.50 333.06 33.48 282.03 29.45 3.18% -89.19% -18.09% -12.03%
+0.5 251.39 197.15 278.26 35.42 211.87 29.60 -18.66% -84.99% -31.33% -16.42%
+0.7 325.55 92.45 336.13 35.55 240.67 30.23 -35.27% -67.30% -39.66% -14.96%
+Note:Gap 1 = (Cost Ours−Cost ALNS)/CostALNS;Gap 2 = (Time Ours−Time ALNS)/Time ALNS;Gap 3 = (Cost Ours−Cost Gu)/CostGu;Gap 4 =
+(Time Ours−Time Gu)/Time Gu.
+TABLE V
+PERFORMANCE EVALUATION OF DIFFERENT ALGORITHMS UNDER VARYING ENVIRONMENTAL CONFIGURATIONS.
+η ρ dyn
+MA2C MAPPO MADDPG MACA-MA2C
+Cost($) Time(min) Cost($) Time(min) Cost($) Time(min) Cost($) Time(min)
+0.1
+0.2 276.25 236.43 250.06 229.30 276.18 226.87234.95 222.31
+0.5 234.67 251.97 271.91 246.83 292.77 247.03200.33 244.30
+0.7 170.25 251.20 218.16 256.89 164.51 248.68149.63 246.11
+0.3
+0.2 273.81 241.09 258.70 233.43 266.10 226.19204.66 220.17
+0.5 218.83 247.51 276.79242.84230.66 249.19170.62243.94
+0.7 172.08 248.47 254.39 252.67 171.64 250.18141.25 232.19
+0.5
+0.2 247.55 234.54 258.33 247.19 267.53 225.46197.69 219.26
+0.5 253.92 244.32 226.59 247.80 216.16 248.63157.08 241.04
+0.7 191.20 249.40 217.83248.89203.47 254.33130.85251.91
+0.7
+0.2 210.95 240.19 245.04 232.26 248.28178.241 200.33224.30
+0.5 216.53 252.23 252.08 247.39 237.11247.03 132.72250.28
+0.7 145.16 247.26 142.05 251.95 188.70 253.05101.13 245.88
+DPG, MA2C and MAPPO algorithms, which converging to
+a high reward level of approximately 680 around episode
+400 and maintaining a stable level. The narrow error band
+confirms that the MACA mechanism could effectively reduces
+policy gradient variance, thereby ensuring training stability.
+In contrast, although the MADDPG algorithm shows a rapid
+upward speed in the early training phase (0-200 rounds), it
+experienced sharp fluctuations in the mid-term (especially be-
+tween rounds 600 and 1100), which revealing its instability in
+long-viewpoint cooperative tasks. While the MAPPO and the
+MA2C showed smaller fluctuations, they exhibited premature
+convergence with the final reward around 640, which failing
+to fully tap the potential of truck-drone collaboration.
+To further evaluate the robustness of the algorithm
+in complex and dynamic environments, we designed a
+cross-evaluation experiment based on road damage ratio
+η∈ {0.1,0.3,0.5,0.7}and dynamic request rateρ dyn ∈
+{0.2,0.5,0.7}. Specifically, higher values forηandρ dyn indi-
+cate a more complex environment and more stringent rescue
+conditions. Therefore, experiments on 12 scenarios are con-
+ducted, in which 50 independent experiments are performed
+for each scenario to obtain the average results, as shown in
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 10
+/uni00000013/uni00000015/uni00000018/uni00000013/uni00000018/uni00000013/uni00000013/uni0000001a/uni00000018/uni00000013/uni00000014/uni00000013/uni00000013/uni00000013/uni00000014/uni00000015/uni00000018/uni00000013/uni00000014/uni00000018/uni00000013/uni00000013
+/uni00000037/uni00000055/uni00000044/uni0000004c/uni00000051/uni0000004c/uni00000051/uni0000004a/uni00000003/uni00000028/uni00000053/uni0000004c/uni00000056/uni00000052/uni00000047/uni00000048/uni00000056
+/uni00000018/uni00000019/uni00000013
+/uni00000018/uni0000001b/uni00000013
+/uni00000019/uni00000013/uni00000013
+/uni00000019/uni00000015/uni00000013
+/uni00000019/uni00000017/uni00000013
+/uni00000019/uni00000019/uni00000013
+/uni00000019/uni0000001b/uni00000013
+/uni0000001a/uni00000013/uni00000013/uni00000035/uni00000048/uni0000005a/uni00000044/uni00000055/uni00000047
+/uni00000030/uni00000024/uni00000026/uni00000024/uni00000010/uni00000030/uni00000024/uni00000015/uni00000026/uni0000000b/uni00000037/uni00000055/uni00000044/uni00000051/uni00000056/uni00000049/uni00000052/uni00000055/uni00000050/uni00000048/uni00000055/uni0000000c
+/uni00000030/uni00000024/uni00000026/uni00000024/uni00000010/uni00000030/uni00000024/uni00000015/uni00000026/uni0000000b/uni00000030/uni0000002f/uni00000033/uni0000000c
+/uni00000030/uni00000024/uni00000027/uni00000027/uni00000033/uni0000002a
+/uni00000030/uni00000024/uni00000015/uni00000026
+/uni00000030/uni00000024/uni00000033/uni00000033/uni00000032
+Fig. 3. MARL training curves comparison. MACA-MA2C (Transformer)
+introduces MACA with the Transformer critic network; MACA-MA2C (MLP)
+introduces MACA with standard MLP critic network
+Table V. Experimental results show that MACA-MA2C has a
+significant advantage in total cost with a global average cost of
+only 166.60, which is 23.15%, 30.39% and 27.38% lower than
+MA2C (217.60), MAPPO (239.33) and MADDPG (230.26)
+respectively. When the environmental complexity increases,
+MACA-MA2C reduced costs by 38.14% compared to
+MA2C under moderate conditions (η= 0.5,ρ dyn = 0.5), and
+by 47.35% (vs. MAPPO) and 44.03% (vs. MADDPG) under
+extreme road conditions(η= 0.7,ρ dyn = 0.5). In terms of task
+completion time, MACA-MA2C’s average task completion
+time is 237.56 min, outperforming MA2C (245.38 min),
+MAPPO (244.79 min), and MADDPG (241.62 min), which
+improvements are 3.19%, 2.95%, and 1.68%, respectively.
+C. Ablation Study
+In this section, we perform the ablation study to evaluate the
+contribution of each module, as shown in the Fig. 3 and Table
+VI. Two models for comparison are MACA-MA2C (MLP)
+and pure MA2C, in which the former one retains the MACA
+mechanism but replaces the Transformer critic with an MLP.
+MACA-MA2C (Transformer) demonstrates significant advan-
+tages in both convergence efficiency and final performance,
+which validating the necessity of dual optimization of mech-
+anism and architecture. Specifically, the MACA mechanism
+significantly reduces the variance of the policy gradient, which
+enabling the model to exhibit faster convergence and higher
+stability in the early stages of training. Moreover, the average
+total cost is reduced from 217.60 to 203.23, a reduction of
+approximately 6.6%. Besides, the Transformer Critic with
+multi-head self-attention mechanism breaks through the repre-
+sentation bottleneck of MLPs, which could accurately capture
+the complex spatiotemporal dependencies between trucks and
+drones. It further reduces the average total cost to 166.60,
+which achieving a performance improvement of approximately
+18.0% compared to the MACA-MA2C (MLP) and 23.4%
+compared to the MA2C.
+Furthermore, we conduct ablation tests to verify the ef-
+fectiveness of our proposed method on the items offlexible.
+TABLE VI
+ABLATION STUDY ON NETWORK ARCHITECTURE AND CREDIT
+ASSIGNMENT MECHANISM
+η ρ dyn
+MA2C MACA-MA2C
+(MLP) (Transformer)
+Cost($) Time(min) Cost($) Time(min) Cost($) Time(min)
+0.1
+0.2 276.25 236.43 264.24 239.23234.95 222.31
+0.5 234.67 251.97195.48249.83 200.33244.30
+0.7 170.25 251.20 153.14 257.75149.63 246.11
+0.3
+0.2 273.81 241.09 281.72 227.86204.66 220.17
+0.5 218.83 247.51 213.41 248.78170.62 243.94
+0.7 172.08 248.47 191.64 252.16141.25 232.19
+0.5
+0.2 247.55 234.54 229.65 226.48197.69 219.26
+0.5 253.92 244.32 197.75 242.83157.08 241.04
+0.7 191.20249.40164.36 256.58130.85251.91
+0.7
+0.2 210.95 240.19 213.21 230.69178.24 224.30
+0.5 216.53 252.23 206.64 254.47132.72 250.28
+0.7 145.16 247.26 127.58245.80 101.13245.88
+Inflexiblein this work refers to that drone must return to its
+original truck after one task finished and cannot provide con-
+tinuous service even with enough power. Fig. 4 demonstrate
+that our flexible model improves the efficiency of truck-drone
+collaboration, which shows significant improvements in total
+cost (321.16→230.26), episode time (307.87→241.62), and
+delay penalty (11.71→7.67). That might be primarily due to
+the removal of rendezvous constraints, i.e., drones can return
+to any truck without the truck needing to travel to a designated
+rendezvous node, which could avoid extra detours and forced
+synchronization waits for trucks, thereby reducing operating
+costs and accelerating task completion. Simultaneously, the
+increased freedom in drone service and recovery enhances
+the system’s responsiveness to emergency needs in dynamic
+environments, which could effectively reducing service delays.
+D. Sensitivity Analysis
+In this section, we explore the impacts of critical model
+parameters on the efficiency of the truck-drone collaborative
+delivery system. Sensitivity analysis are performed on the
+drone’s maximum battery capacity (Emax), drone’s maximum
+payload capacity (W DR
+max) and travel speed ratio between
+drones and trucks (v d/vt), as well as the combined influence
+of road damage ratioηand dynamic request degreeρ dyn.
+To elucidate those effects and assess the robustness of the
+proposed model, we evaluate the average total cost, service
+rate, and drone wait time, which simulation environment is
+defined as the same as in Section 4.1 with 30 customers.
+Fig. 5 illustrates the sensitivity analysis of maximum battery
+capacityE max ∈ {10,20,30,40,50,60}, the drone maxi-
+mum payload capacityW DR
+max ∈{30,40,50,60,70,80}and
+the travel speed ratio between drones and trucksv d/vt ∈
+{0.5,1.0,1.5,2.0,2.5,3.0}. The data shows thatE max and
+WDR
+max exhibit similar decreasing patterns, with the average
+total cost stabilizing at saturation thresholdsE max = 40and
+WDR
+max = 70after a significant decrease. This is primarily
+attributed to the fact that these capacities are sufficient to
+cover the spatial range and load requirements of most dy-
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 11
+/uni00000013/uni00000015/uni00000018/uni00000013/uni00000018/uni00000013/uni00000013/uni0000001a/uni00000018/uni00000013/uni00000014/uni00000013/uni00000013/uni00000013/uni00000014/uni00000015/uni00000018/uni00000013/uni00000014/uni00000018/uni00000013/uni00000013
+/uni00000037/uni00000055/uni00000044/uni0000004c/uni00000051/uni0000004c/uni00000051/uni0000004a/uni00000003/uni00000028/uni00000053/uni0000004c/uni00000056/uni00000052/uni00000047/uni00000048/uni00000056
+/uni00000017/uni00000013/uni00000013
+/uni00000017/uni00000018/uni00000013
+/uni00000018/uni00000013/uni00000013
+/uni00000018/uni00000018/uni00000013
+/uni00000019/uni00000013/uni00000013
+/uni00000019/uni00000018/uni00000013
+/uni0000001a/uni00000013/uni00000013/uni00000035/uni00000048/uni0000005a/uni00000044/uni00000055/uni00000047
+/uni00000029/uni0000004f/uni00000048/uni0000005b/uni0000004c/uni00000045/uni0000004f/uni00000048
+/uni0000002c/uni00000051/uni00000049/uni0000004f/uni00000048/uni0000005b/uni0000004c/uni00000045/uni0000004f/uni00000048
+(a) Training convergence performance
+ 
+(b) Comparison of metrics
+Fig. 4. Performance evaluation of the flexibility.
+namic requests, thereby reducing reliance on high-cost truck
+routes and eliminating the non-service penalty caused by
+payload limitations. In contrast, the speed ratio exhibits a non-
+monotonic trend, with the lowest cost atv d/vt = 2.0; ratios
+exceeding 2.5 lead to a cost rebound, as the drone arrives at
+the rendezvous point much earlier than the truck, resulting in
+excessively long waiting times.
+In addition, we investigate the joint impacts of the road
+damage ratioηand the degree of dynamismρ dyn on the
+average total cost, as shown in Fig. 5 (d). Results show that
+the average total cost monotonically decreases with increasing
+environmental complexity, which is ranging from 234.9 in
+the scenario (η= 0.1,ρ dyn = 0.2) to 101.1 in the extreme
+scenario (η= 0.7,ρ dyn = 0.7). This cost evolution reflects
+the dynamic adjustment of vehicle selection at the strategic
+level. Given that the operational cost of drones (0.21/min) is
+substantially lower than that of trucks (0.83/min), higherη
+values restrict ground accessibility, while higherρ dyn requires
+greater response flexibility. Therefore, the system will tend to
+reduce its reliance on trucks and instead optimize delivery
+routes by increasing the proportion of drone missions. The
+low-cost in the upper-right region of the heatmap demonstrates
+that the proposed flexible collaboration mechanism can fully
+tap the efficiency of air transport in harsh environments and
+achieve a balance between the overall robustness and economy
+of the system.
+V. CONCLUSION
+In this paper, we proposed a MACA-MA2C framework
+to address the challenging truck-drone collaborative routing
+problem for emergency rescue under dynamic and uncertain
+environments. We established a flexible collaboration method
+that allows drones to continuously serve requests and be
+recovered by any truck, while trucks just passively wait for
+rendezvous without traveling to specific points. This design
+significantly enhances the system’s adaptability to road dam-
+age environment and dynamic service requests. Extensive
+simulation results validated the superiority of our method,
+achieving the global average cost savings by about 23.15%
+compared to MA2C, about 30.39% compared to MAPPO
+and about 27.38% compared to MADDPG, while the average
+episode time was shortened by up to 3.19%. Furthermore, the
+flexibility analysis confirmed the effectiveness of the proposed
+mechanism, which reduced the total cost, episode time and
+delay penalty by 28.30%, 21.52% and 34.5%, respectively.
+Despite those contributions in efficiency and flexibility, the
+current validation is primarily conducted within a simulated
+environment with randomly distributed nodes based on Ope-
+nAI Gym. Future work will focus on extending the algorithm
+to address partially observable environments with noisy or
+constrained communication channels.
+REFERENCES
+[1] T. Kundu, J.-B. Sheu, and H.-T. Kuo, “Emergency logistics manage-
+ment—review and propositions for future research,”Transportation
+research part E: logistics and transportation review, vol. 164, p. 102789,
+2022.
+[2] J. Fan, X. Chang, J. Mi ˇsi´c, V . B. Miˇsi´c, and H. Kang, “Dhl: Deep re-
+inforcement learning-based approach for emergency supply distribution
+in humanitarian logistics,”Peer-to-Peer Networking and Applications,
+vol. 15, no. 5, pp. 2376–2389, 2022.
+[3] S. Wandelt, S. Wang, C. Zheng, and X. Sun, “Aerial: A meta review
+and discussion of challenges toward unmanned aerial vehicle operations
+in logistics, mobility, and monitoring,”IEEE Transactions on Intelligent
+Transportation Systems, vol. 25, no. 7, pp. 6276–6289, 2023.
+[4] Z. Du, C. Luo, G. Min, J. Wu, C. Luo, J. Pu, and S. Li, “A survey on
+autonomous and intelligent swarms of uncrewed aerial vehicles (uavs),”
+IEEE Transactions on Intelligent Transportation Systems, 2025.
+[5] Y . Long, G. Xu, J. Zhao, B. Xie, and M. Fang, “Dynamic truck–uav
+collaboration and integrated route planning for resilient urban emergency
+response,”IEEE Transactions on Engineering Management, vol. 71, pp.
+9826–9838, 2023.
+[6] Y . Liu, J. Shi, Z. Luo, X. Hu, W. Pedrycz, and Z. Liu, “Cooperated truck-
+drone routing with drone energy consumption and time windows,”IEEE
+Transactions on Intelligent Transportation Systems, vol. 25, no. 12, pp.
+20 390–20 404, 2024.
+[7] F. M. de Oliveira, L. F. Bittencourt, R. A. Bianchi, and C. A. Kamienski,
+“Drones in the big city: Autonomous collision avoidance for aerial
+delivery services,”IEEE Transactions on Intelligent Transportation
+Systems, vol. 25, no. 5, pp. 4657–4674, 2023.
+[8] C. C. Murray and A. G. Chu, “The flying sidekick traveling salesman
+problem: Optimization of drone-assisted parcel delivery,”Transportation
+Research Part C: Emerging Technologies, vol. 54, pp. 86–109, 2015.
+[9] G. Macrina, L. Di Puglia Pugliese, F. Guerriero, and G. Laporte, “Drone-
+aided routing: A literature review,”Transportation Research Part C:
+Emerging Technologies, vol. 120, p. 102762, 2020. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0968090X20306744
+[10] Q. M. Ha, Y . Deville, Q. D. Pham, and M. H. H `a, “On the
+min-cost traveling salesman problem with drone,”Transportation
+Research Part C: Emerging Technologies, vol. 86, pp. 597–621, 2018.
+[Online]. Available: https://www.sciencedirect.com/science/article/pii/
+S0968090X17303327
+[11] M. Moshref-Javadi, S. Lee, and M. Winkenbach, “Design and evaluation
+of a multi-trip delivery model with truck and drones,”Transportation
+Research Part E: Logistics and Transportation Review, vol. 136,
+p. 101887, 2020. [Online]. Available: https://www.sciencedirect.com/
+science/article/pii/S1366554519303722
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 12
+10 20 30 40 50 60
+Emax
+250
+300
+350
+400
+450
+500Average Total Cost
+495.79
+359.21
+247.58 236.88 236.48 236.70
+Average T otal Cost
+Service Rate
+0.86
+0.88
+0.90
+0.92
+0.94
+0.96
+0.98
+1.00
+Service Rate
+0.87
+0.96
+1.00 1.00 1.00 1.00
+(a) Impacts of the drone’s maximum battery capacity
+30 40 50 60 70 80
+WDR
+max [kg]
+250
+300
+350
+400
+450
+500Average Total Cost
+479.80
+354.19
+282.98
+263.25
+235.88 236.48
+Average T otal Cost
+Service Rate
+0.84
+0.86
+0.88
+0.90
+0.92
+0.94
+0.96
+0.98
+1.00
+Service Rate
+0.86
+0.96
+1.00 1.00 1.00 1.00 (b) Impacts of the drone’s maximum payload capacity
+0.5 1.0 1.5 2.0 2.5 3.0
+vd/vt
+150
+200
+250
+300
+350Average Total Cost
+326.33
+256.86
+205.34
+142.57
+180.65
+149.13
+Average T otal Cost
+Drone Wait Time
+0
+5
+10
+15
+20
+25
+Drone Wait Time
+0.00
+3.57
+10.81 10.91
+23.26
+16.39
+(c) Impacts of the travel speed ratio between drones and trucks
+0.1 0.3 0.5 0.7
+Road Damage Ratio ( )
+0.2 0.5 0.7
+Dynamic Request Degree ( dyn)
+234.9 204.7 197.7 178.2
+200.3 170.6 157.1 132.7
+149.6 141.2 130.8 101.1
+120
+140
+160
+180
+200
+220
+Average Total Cost (d) Joint impacts of the road damage ratio (η) and
+the degree of dynamism (ρ dyn)
+Fig. 5. Sensitivity analysis
+[12] M. Dell’Amico, R. Montemanni, and S. Novellani, “Drone-assisted
+deliveries: New formulations for the flying sidekick traveling salesman
+problem,”Optimization Letters, vol. 15, no. 5, pp. 1617–1648, 2021.
+[13] E. E. Yurek and H. C. Ozmutlu, “A decomposition-based iterative
+optimization algorithm for traveling salesman problem with drone,”
+Transportation Research Part C: Emerging Technologies, vol. 91, pp.
+249–262, 2018.
+[14] D. Sacramento, D. Pisinger, and S. Ropke, “An adaptive large
+neighborhood search metaheuristic for the vehicle routing problem with
+drones,”Transportation Research Part C: Emerging Technologies, vol.
+102, pp. 289–315, 2019. [Online]. Available: https://www.sciencedirect.
+com/science/article/pii/S0968090X18303218
+[15] P. L. Gonzalez-R, D. Canca, J. L. Andrade-Pineda, M. Calle, and J. M.
+Leon-Blanco, “Truck-drone team logistics: A heuristic approach to
+multi-drop route planning,”Transportation Research Part C: Emerging
+Technologies, vol. 114, pp. 657–680, 2020. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0968090X19309568
+[16] H. Jung and J. Kim, “Drone scheduling model for delivering small
+parcels to remote islands considering wind direction and speed,”
+Computers Industrial Engineering, vol. 163, p. 107784, 2022.
+[Online]. Available: https://www.sciencedirect.com/science/article/pii/
+S0360835221006884
+[17] Y . Yin, Y . Yang, Y . Yu, D. Wang, and T. Cheng, “Robust vehicle
+routing with drones under uncertain demands and truck travel
+times in humanitarian logistics,”Transportation Research Part B:
+Methodological, vol. 174, p. 102781, 2023. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0191261523001042
+[18] R. Gu, Y . Liu, and M. Poon, “Dynamic truck–drone routing
+problem for scheduled deliveries and on-demand pickups with
+time-related constraints,”Transportation Research Part C: Emerging
+Technologies, vol. 151, p. 104139, 2023. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0968090X23001286
+[19] M. Deng, Y . Li, J. Ding, Y . Zhou, and L. Zhang, “Stochastic and
+robust truck-and-drone routing problems with deadlines: A benders
+decomposition approach,”Transportation Research Part E: Logistics and
+Transportation Review, vol. 190, p. 103709, 2024.
+[20] X. Li, M. Lyu, W. Liu, and A. Li, “Real-time coordinated vehicle-drone
+path planning for urban healthcare delivery services,”Transportmetrica
+A: Transport Science, pp. 1–52, 2025.
+[21] X. Yang, W. Cao, K. Wang, H. Yin, J. Wu, and L. Wu,
+“Integrated scheduling of truck and drone fleets for cargo
+transportation in post-disaster relief: A two-stage stochastic
+optimization approach,”Transportation Research Part E: Logistics and
+Transportation Review, vol. 196, p. 104015, 2025. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S1366554525000560
+[22] D. Silver, A. Huang, C. J. Maddison, A. Guez, L. Sifre, G. Van
+Den Driessche, J. Schrittwieser, I. Antonoglou, V . Panneershelvam,
+M. Lanctotet al., “Mastering the game of go with deep neural networks
+and tree search,”nature, vol. 529, no. 7587, pp. 484–489, 2016.
+[23] T. Wang, Z. Zhu, J. Zhang, J. Tian, and W. Zhang, “A large-scale
+traffic signal control algorithm based on multi-layer graph deep
+reinforcement learning,”Transportation Research Part C: Emerging
+Technologies, vol. 162, p. 104582, 2024. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0968090X24001037
+[24] W. Pan and S. Q. Liu, “Deep reinforcement learning for the dynamic
+and uncertain vehicle routing problem,”Applied Intelligence, vol. 53,
+no. 1, pp. 405–422, 2023.
+[25] Z. Iklassov, I. Sobirov, R. Solozabal, and M. Tak ´aˇc, “Reinforcement
+learning for solving stochastic vehicle routing problem,” inAsian
+Conference on Machine Learning. PMLR, 2024, pp. 502–517.
+[26] C. Xiang, Z. Wu, J. Tu, and J. Huang, “Centralized deep reinforcement
+learning method for dynamic multi-vehicle pickup and delivery problem
+with crowdshippers,”IEEE Transactions on Intelligent Transportation
+Systems, vol. 25, no. 8, pp. 9253–9267, 2024.
+[27] W. Peng, D. Wang, Y . Yin, and T. Cheng, “Multi-agent deep
+reinforcement learning-based truck-drone collaborative routing with
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 13
+dynamic emergency response,”Transportation Research Part E:
+Logistics and Transportation Review, vol. 195, p. 103974, 2025.
+[Online]. Available: https://www.sciencedirect.com/science/article/pii/
+S1366554525000158
+[28] Y . Wu, X. Fang, G. Min, H. Chen, and C. Luo, “Intelligent offloading
+balance for vehicular edge computing and networks,”IEEE Transactions
+on Intelligent Transportation Systems, 2025.
+[29] Z. Li, Q. Wang, J. Wang, and Z. He, “A flexible cooperative marl
+method for efficient passage of an emergency cav in mixed traffic,”
+IEEE Transactions on Intelligent Transportation Systems, vol. 25, no. 8,
+pp. 8898–8912, 2024.
+[30] H. Ge, D. Gao, L. Sun, Y . Hou, C. Yu, Y . Wang, and G. Tan, “Multi-agent
+transfer reinforcement learning with multi-view encoder for adaptive
+traffic signal control,”IEEE Transactions on Intelligent Transportation
+Systems, vol. 23, no. 8, pp. 12 572–12 587, 2021.
+[31] M. Abdoos, N. Mozayani, and A. L. C. Bazzan, “Traffic light control
+in non-stationary environments based on multi agent q-learning,” in
+2011 14th International IEEE Conference on Intelligent Transportation
+Systems (ITSC), Oct 2011, pp. 1580–1585.
+[32] H. Ge, Y . Song, C. Wu, J. Ren, and G. Tan, “Cooperative deep q-learning
+with q-value transfer for multi-intersection signal control,”IEEE Access,
+vol. 7, pp. 40 797–40 809, 2019.
+[33] A. Shojaeighadikolaei, Z. Talata, and M. Hashemi, “Centralized vs.
+decentralized multi-agent reinforcement learning for enhanced control
+of electric vehicle charging networks,”arXiv preprint arXiv:2404.12520,
+2024.
+[34] C. Amato, “An introduction to centralized training for decentralized
+execution in cooperative multi-agent reinforcement learning,” 2024.
+[Online]. Available: https://arxiv.org/abs/2409.03052
+[35] T. Chu, J. Wang, L. Codec `a, and Z. Li, “Multi-agent deep reinforcement
+learning for large-scale traffic signal control,”IEEE transactions on
+intelligent transportation systems, vol. 21, no. 3, pp. 1086–1095, 2019.
+[36] S. Li, “Multi-agent deep deterministic policy gradient for traffic signal
+control on urban road network,” in2020 IEEE International Conference
+on Advances in Electrical Engineering and Computer Applications(
+AEECA), 2020, pp. 896–900.
+[37] S. Zheng and H. Liu, “Improved multi-agent deep deterministic policy
+gradient for path planning-based crowd simulation,”IEEE Access, vol. 7,
+pp. 147 755–147 770, 2019.
+[38] L. Parada, E. Candela, L. Marques, and P. Angeloudis, “Safe and
+efficient manoeuvring for emergency vehicles in autonomous traffic
+using multi-agent proximal policy optimisation,”Transportmetrica A:
+Transport Science, vol. 21, no. 2, p. 2246586, 2025.
+[39] T. Yu, X. Wang, J. Hu, and J. Yang, “Multi-agent proximal policy
+optimization-based dynamic client selection for federated ai in 6g-
+oriented internet of vehicles,”IEEE Transactions on Vehicular Tech-
+nology, vol. 73, no. 9, pp. 13 611–13 624, 2024.
+[40] O. Dukkanci, J. F. Campbell, and B. Y . Kara, “Facility location
+decisions for drone delivery with riding: A literature review,”Computers
+Operations Research, vol. 167, p. 106672, 2024. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0305054824001448
+[41] H. Han, Y . Xu, Z. Feng, X. Wang, Y . Xu, W. Li, and F. Zhou,
+“Efficient dynamic spectrum anti-jamming access with large action
+space: An action space decomposition-based approach,”IEEE Wireless
+Communications Letters, vol. 13, no. 10, pp. 2667–2671, Oct 2024.
+[42] A. M. Ali, L. Tirel, and H. A. Hashim, “Novel multi-agent action
+masked deep reinforcement learning for general industrial assembly lines
+balancing problems,”Journal of Automation and Intelligence, 2025.
+[43] S. Hakimi, G. Berardinelli, and R. Adeogun, “Attention-aided channel
+prediction for efficient resource management in industrial iot subnet-
+works,”IEEE Internet of Things Journal, vol. 12, no. 22, pp. 48 304–
+48 317, 2025.
+[44] K. Hu, K. Xu, Q. Xia, M. Li, Z. Song, L. Song, and N. Sun, “An
+overview: Attention mechanisms in multi-agent reinforcement learning,”
+Neurocomputing, vol. 598, p. 128015, 2024. [Online]. Available:
+https://www.sciencedirect.com/science/article/pii/S0925231224007860
+[45] M. S. Mondal, S. Ramasamy, J. D. Humann, J. M. Dotterweich, J.-
+P. F. Reddinger, M. A. Childers, and P. Bhounsule, “An attention-aware
+deep reinforcement learning framework for uav-ugv collaborative route
+planning,” in2024 IEEE/RSJ International Conference on Intelligent
+Robots and Systems (IROS), Oct 2024, pp. 13 687–13 694.
+[46] F. Mao, Z. Li, Y . Lin, and L. Li, “Mastering arterial traffic signal
+control with multi-agent attention-based soft actor-critic model,”IEEE
+Transactions on Intelligent Transportation Systems, vol. 24, no. 3, pp.
+3129–3144, March 2023.
+[47] D. Shi, C. Zhao, Y . Wang, H. Yang, G. Wang, H. Jiang, C. Xue,
+S. Yang, and Y . Zhang, “Multi actor hierarchical attention critic
+with rnn-based feature extraction,”Neurocomputing, vol. 471, pp. 79–
+93, 2022. [Online]. Available: https://www.sciencedirect.com/science/
+article/pii/S0925231221016258
+[48] B. Liu, Z. Pu, Y . Pan, J. Yi, Y . Liang, and D. Zhang, “Lazy agents: A
+new perspective on solving sparse reward problem in multi-agent rein-
+forcement learning,” inInternational Conference on Machine Learning.
+PMLR, 2023, pp. 21 937–21 950.
+[49] H. Mao, Z. Gong, and Z. Xiao, “Reward design in cooperative
+multi-agent reinforcement learning for packet routing,”arXiv preprint
+arXiv:2003.03433, 2020.
+[50] K. Jiang, W. Liu, Y . Wang, L. Dong, and C. Sun, “Credit assignment in
+heterogeneous multi-agent reinforcement learning for fully cooperative
+tasks,”Applied Intelligence, vol. 53, no. 23, pp. 29 205–29 222, 2023.
+[51] J. Foerster, G. Farquhar, T. Afouras, N. Nardelli, and S. Whiteson,
+“Counterfactual multi-agent policy gradients,” inProceedings of the
+AAAI conference on artificial intelligence, vol. 32, no. 1, 2018.
+[52] J. Chai, Y . Fu, D. Zhao, and Y . Zhu, “Aligning credit for multi-agent
+cooperation via model-based counterfactual imagination,” inProceed-
+ings of the 23rd International Conference on Autonomous Agents and
+Multiagent Systems, 2024, pp. 281–289.
+[53] X. Zhao and Y . Xie, “Multi-level advantage credit assignment for co-
+operative multi-agent reinforcement learning,” inThe 28th International
+Conference on Artificial Intelligence and Statistics, 2025.
+[54] S. Lei, C. Ma, H. Wen, Y . Li, L. Chen, Q. Yang, F. Tsung,
+L. Chen, S. Ruan, and Y . Liang, “Hierarchical reinforcement learning
+for cooperative air-ground delivery in urban system,”arXiv preprint
+arXiv:2602.12913, 2026.
+[55] N. Agatz, P. Bouman, and M. Schmidt, “Optimization approaches for the
+traveling salesman problem with drone,”Transportation Science, vol. 52,
+no. 4, pp. 965–981, 2018.
+[56] R. Gu, Y . Liu, and M. Poon, “Dynamic truck–drone routing problem
+for scheduled deliveries and on-demand pickups with time-related con-
+straints,”Transportation Research Part C: Emerging Technologies, vol.
+151, p. 104139, 2023.
+[57] A. Larsen, O. B. G. Madsen, and M. M. Solomon, “Partially dynamic
+vehicle routing—models and algorithms,”Journal of the Operational
+Research Society, vol. 53, pp. 637–646, 2002. [Online]. Available:
+https://api.semanticscholar.org/CorpusID:62576493
+[58] Y . Yin, Y . Yang, Y . Yu, D. Wang, and T. Cheng, “Robust vehicle
+routing with drones under uncertain demands and truck travel times in
+humanitarian logistics,”Transportation research part B: methodological,
+vol. 174, p. 102781, 2023.
+[59] D. Sacramento, D. Pisinger, and S. Ropke, “An adaptive large neighbor-
+hood search metaheuristic for the vehicle routing problem with drones,”
+Transportation Research Part C: Emerging Technologies, vol. 102, pp.
+289–315, 2019.
+[60] M. M. Solomon, “Algorithms for the vehicle routing and scheduling
+problems with time window constraints,”Operations research, vol. 35,
+no. 2, pp. 254–265, 1987.
+[61] L. Glomb, F. Liers, and F. R ¨osel, “A rolling-horizon approach for multi-
+period optimization,”European Journal of Operational Research, vol.
+300, no. 1, pp. 189–206, 2022.
+[62] C. Yu, A. Velu, E. Vinitsky, J. Gao, Y . Wang, A. Bayen, and Y . Wu,
+“The surprising effectiveness of ppo in cooperative, multi-agent games,”
+2022. [Online]. Available: https://arxiv.org/abs/2103.01955
+Yu Guanreceived the B.E. degree in mechanical and electronic Engineering
+from the School of Taiyuan University of Technology, Taiyuan, China, in
+2024. She is currently working toward the M.E. degree in Control Engineering
+from School of Beijing Institute of Technology, Beijing, China. Her research
+interest include multi agent reinforcement learning, machine learning and
+intelligent transportation system.
+IEEETRANSACTIONSONINTELLIGENTTRANSPORTATIONSYSTEMS, VOL.XX, NO.XX, APRIL 2026 14
+Chunli Zhureceived the B.S. degree in trans portation engineering from
+Central South University, Changsha, China, in 2013, and the Ph.D. degree in
+civil engineering from Tsinghua University, Beijing, China, in 2021. She was
+a Visiting Scholar with ETH Z ¨urich, Z ¨urich, Switzerland, and the University
+of Birmingham, Birmingham, U.K., respectively. She is currently an Assistant
+Professor with the Beijing Institute of Technology, Beijing. Her research
+interests include intelligent transportation systems, Bayesian causal inference,
+pattern recognition, and cooperative optimization.
+Jing Yereceived the B.E. degree in from Central South University, Changsha,
+China, and the M.E. degree from the China Academy of Railway Sciences,
+Beijing, China. She is currently with the Xiningdong Vehicle Section, China
+Railway Qinghai-Tibet Group Co., Ltd., Xining, China. Her research interests
+include railway transportation, and intelligent transportation systems.
+Lei Chenreceived the Ph.D. degree in control theory and engineering from
+Southeast University, Nanjing, China, in 2018. He was a Visiting Ph.D. Stu-
+dent with the Royal Melbourne Institute of Technology University, Melbourne,
+VIC, Australia, and Okayama Prefectural University, Soja, Japan. From 2018
+to 2020, he was a Post-Doctoral Fellow with the School of Automation
+Science and Electrical Engineering, Beihang University, Beijing, China. He is
+currently with the Advanced Research Institute of Multidisciplinary Science,
+Beijing Institute of Technology, Beijing, as an Associate Research Fellow.
+His current research interests include complex networks, characteristic model,
+spacecraft control, and network control.
+Anastasios Kouvelasreceived the Diploma, M.Sc., and Ph.D. degrees from
+the Department of Production and Management Engineering (Operations
+Research), Technical University of Crete, Greece, in 2004, 2006, and 2011,
+respectively, specializing in modeling, control, and optimization of large-scale
+transport systems. He has been the Director of the Research Group Traffic
+Engineering and Control, Institute for Transport Planning and Systems (IVT),
+Department of Civil, Environmental and Geomatic Engineering, Swiss Federal
+Institute of Technology (ETH) Z ¨urich, since August 2018. Prior to joining
+IVT, he was a Research Scientist with the Urban Transport Systems Labora-
+tory (LUTS), EPFL (2014–2018), and a Post-Doctoral Fellow with Partners
+for Advanced Transportation Technology (PATH), University of California at
+Berkeley (2012–2014). Before this, he was appointed as an Adjunct Professor
+with the Technical University of Crete in 2011 and a Research Associate
+with the Centre for Research and Technology Hellas (CERTH), Information
+Technologies Institute, Thessaloniki, Greece (2011–2012). In 2009, he was
+a Doctoral Visiting Scholar with the Center for Advanced Transportation
+Technologies (CATT), Viterbi School of Engineering, Department of Electrical
+Engineering, University of Southern California, Los Angeles. He has been
+awarded with the 2012 Best IEEE ITS PhD Dissertation Award from IEEE
+Intelligent Transportation Systems Society. He has been a member of the
+Transportation Research Board (TRB) Standing Committee (AHB15) on
+Intelligent Transportation Systems since 2019. He has been serving as an
+Associate Editor for IET Intelligent Transport Systems journal since 2017.
+He has guest-edited several special issues in transportation journals.

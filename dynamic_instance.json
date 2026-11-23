@@ -1,0 +1,59 @@
+{
+    "metadata": {
+        "total_nodes": 5,
+        "horizon": 300,
+        "area_size_km": 15.0
+    },
+    "nodes": [
+        {
+            "id": 0,
+            "x": 7.463588478248978,
+            "y": 8.789686679384632,
+            "demand": 0.0,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 300.0,
+            "road_damaged": 0
+        },
+        {
+            "id": 1,
+            "x": 15.0,
+            "y": 3.67118667454342,
+            "demand": 36.736333018643464,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 212.1819703483163,
+            "road_damaged": 0
+        },
+        {
+            "id": 2,
+            "x": 0.0,
+            "y": 5.646943511030972,
+            "demand": 18.4797542176349,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 222.67600704134006,
+            "road_damaged": 0
+        },
+        {
+            "id": 3,
+            "x": 5.742192242952521,
+            "y": 0.0,
+            "demand": 0.0,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 300.0,
+            "road_damaged": 1
+        },
+        {
+            "id": 4,
+            "x": 14.278394394859376,
+            "y": 15.0,
+            "demand": 15.719734919956863,
+            "is_dynamic": true,
+            "release_time": 79.79135126810108,
+            "deadline": 136.41357598711315,
+            "road_damaged": 1
+        }
+    ]
+}

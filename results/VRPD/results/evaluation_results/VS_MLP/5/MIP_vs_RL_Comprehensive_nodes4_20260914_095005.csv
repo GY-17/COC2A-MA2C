@@ -1,0 +1,4 @@
+﻿Damage Ratio,MIP Success Rate (%),MIP Profit (Optimal),RL Profit (Model),MIP Cost,RL Cost,MIP Time (s),RL Time (s),Optimality Gap (%),Speedup (Times)
+0.1,100.0,51.12,-1.48,38.88,91.48,0.2969,1.0547,112.67,0.0
+0.3,100.0,48.73,39.07,41.27,50.93,0.1446,1.1815,13.86,0.0
+0.5,100.0,40.75,48.4,49.25,41.6,0.0664,1.3404,-21.43,0.0

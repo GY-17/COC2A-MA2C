@@ -1,0 +1,40 @@
+{
+  "damage_dod": [
+    {
+      "n": 9,
+      "\u03bb": 0.1,
+      "DoD": 0.5,
+      "total_cost": 14.011400835002283,
+      "travel_cost": 14.011400835002283,
+      "delay_penalty": 0.0,
+      "served_nodes": 9.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999998888889013,
+      "total_episode_time": 209.88568247805117
+    },
+    {
+      "n": 9,
+      "\u03bb": 0.3,
+      "DoD": 0.5,
+      "total_cost": 13.144378800944665,
+      "travel_cost": 13.144378800944665,
+      "delay_penalty": 0.0,
+      "served_nodes": 9.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999998888889013,
+      "total_episode_time": 224.77779513882743
+    },
+    {
+      "n": 9,
+      "\u03bb": 0.5,
+      "DoD": 0.5,
+      "total_cost": 12.670595435445641,
+      "travel_cost": 12.670595435445641,
+      "delay_penalty": 0.0,
+      "served_nodes": 9.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999998888889013,
+      "total_episode_time": 198.758461599533
+    }
+  ]
+}

@@ -1,0 +1,460 @@
+{
+  "cost_ratio": [
+    {
+      "cost_ratio": 0.25,
+      "ct_cost": 0.8320000000000001,
+      "cd_cost": 0.20800000000000002,
+      "total_cost": 274.7121857382975,
+      "travel_cost": 274.7121857382975,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "cost_ratio": 0.5,
+      "ct_cost": 0.6933333333333334,
+      "cd_cost": 0.3466666666666667,
+      "total_cost": 236.84668780677416,
+      "travel_cost": 236.84668780677416,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "cost_ratio": 1.0,
+      "ct_cost": 0.52,
+      "cd_cost": 0.52,
+      "total_cost": 237.31337030023693,
+      "travel_cost": 237.31337030023693,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "cost_ratio": 2.0,
+      "ct_cost": 0.3466666666666667,
+      "cd_cost": 0.6933333333333334,
+      "total_cost": 237.78005279370046,
+      "travel_cost": 237.78005279370046,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "cost_ratio": 3.0,
+      "ct_cost": 0.26,
+      "cd_cost": 0.78,
+      "total_cost": 238.0133940404318,
+      "travel_cost": 238.0133940404318,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "cost_ratio": 4.0,
+      "ct_cost": 0.20800000000000002,
+      "cd_cost": 0.8320000000000001,
+      "total_cost": 238.1533987884706,
+      "travel_cost": 238.1533987884706,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "delay_penalty": [
+    {
+      "alpha": 0.0,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "alpha": 0.25,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "alpha": 0.5,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "alpha": 1.0,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "alpha": 1.5,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "alpha": 2.0,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "delay_time": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "drone_capacity": [
+    {
+      "capacity": 30,
+      "total_cost": 479.79566468489736,
+      "travel_cost": 345.8277615441182,
+      "delay_penalty": 7.967903140779202,
+      "served_nodes": 25.8,
+      "unserved_nodes": 4.2,
+      "service_rate": 0.8599999713333343
+    },
+    {
+      "capacity": 40,
+      "total_cost": 354.1931286774824,
+      "travel_cost": 321.1931286774824,
+      "delay_penalty": 0.0,
+      "served_nodes": 28.9,
+      "unserved_nodes": 1.1,
+      "service_rate": 0.9633333012222232
+    },
+    {
+      "capacity": 50,
+      "total_cost": 282.9825618009917,
+      "travel_cost": 282.9825618009917,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "capacity": 60,
+      "total_cost": 263.2492489078851,
+      "travel_cost": 263.2492489078851,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "capacity": 70,
+      "total_cost": 235.8807487549475,
+      "travel_cost": 235.8807487549475,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "capacity": 80,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "battery_capacity": [
+    {
+      "battery": 10,
+      "total_cost": 495.78832635705794,
+      "travel_cost": 372.93584917675423,
+      "delay_penalty": 8.852477180303705,
+      "served_nodes": 26.2,
+      "unserved_nodes": 3.8,
+      "service_rate": 0.8733333042222231
+    },
+    {
+      "battery": 20,
+      "total_cost": 359.20606773231157,
+      "travel_cost": 319.4199923221041,
+      "delay_penalty": 0.7860754102074828,
+      "served_nodes": 28.7,
+      "unserved_nodes": 1.3,
+      "service_rate": 0.9566666347777788
+    },
+    {
+      "battery": 30,
+      "total_cost": 247.584960168631,
+      "travel_cost": 247.584960168631,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "battery": 40,
+      "total_cost": 236.88218725901575,
+      "travel_cost": 236.88218725901575,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "battery": 50,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "battery": 60,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "battery": 70,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "battery": 80,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "speed_ratio": [
+    {
+      "speed_ratio": 0.5,
+      "total_cost": 442.94174064348755,
+      "travel_cost": 427.24418090674624,
+      "truck_time": 344.8969183502428,
+      "drone_time": 657.8544698859232,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "speed_ratio": 1.0,
+      "total_cost": 316.0374143458801,
+      "travel_cost": 315.7479090056653,
+      "truck_time": 274.07408262965254,
+      "drone_time": 404.3091448716833,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "speed_ratio": 1.5,
+      "total_cost": 266.85990128164025,
+      "travel_cost": 266.85990128164025,
+      "truck_time": 237.6331968208255,
+      "drone_time": 315.6954662874049,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "speed_ratio": 2.0,
+      "total_cost": 236.47872661000525,
+      "travel_cost": 236.47872661000525,
+      "truck_time": 223.69973348062337,
+      "drone_time": 229.5321324813711,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "speed_ratio": 2.5,
+      "total_cost": 208.15109466090811,
+      "travel_cost": 208.15109466090811,
+      "truck_time": 198.39561380437334,
+      "drone_time": 192.51588192037298,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "speed_ratio": 3.0,
+      "total_cost": 197.65777886887875,
+      "travel_cost": 197.65777886887875,
+      "truck_time": 189.27160216104,
+      "drone_time": 177.34451940578867,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "dynamic_degree": [
+    {
+      "dod": 0.0,
+      "total_cost": 348.3725665205794,
+      "travel_cost": 348.3725665205794,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "dod": 0.2,
+      "total_cost": 258.5423744124756,
+      "travel_cost": 258.5423744124756,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "dod": 0.5,
+      "total_cost": 323.99122295301254,
+      "travel_cost": 323.99122295301254,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    },
+    {
+      "dod": 0.7,
+      "total_cost": 254.94051145232493,
+      "travel_cost": 254.94051145232493,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678
+    }
+  ],
+  "damage_dod": [
+    {
+      "n": 30,
+      "\u03bb": 0.1,
+      "DoD": 0.2,
+      "total_cost": 321.3847142700401,
+      "travel_cost": 321.3847142700401,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 232.66601146302418
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.1,
+      "DoD": 0.5,
+      "total_cost": 262.86314425397484,
+      "travel_cost": 262.86314425397484,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 255.09176723699503
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.1,
+      "DoD": 0.7,
+      "total_cost": 225.98361837553608,
+      "travel_cost": 225.98361837553608,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 264.97248414786
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.3,
+      "DoD": 0.2,
+      "total_cost": 264.589310179166,
+      "travel_cost": 264.589310179166,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 232.63698159859274
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.3,
+      "DoD": 0.5,
+      "total_cost": 272.36395521324823,
+      "travel_cost": 272.36395521324823,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 251.6517924650136
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.3,
+      "DoD": 0.7,
+      "total_cost": 207.5189909980606,
+      "travel_cost": 207.5189909980606,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 265.40493834848996
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.5,
+      "DoD": 0.2,
+      "total_cost": 248.72869413941353,
+      "travel_cost": 248.72869413941353,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 232.63698159859274
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.5,
+      "DoD": 0.5,
+      "total_cost": 247.8662967457848,
+      "travel_cost": 247.8662967457848,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 251.6517924650136
+    },
+    {
+      "n": 30,
+      "\u03bb": 0.5,
+      "DoD": 0.7,
+      "total_cost": 205.50458267856294,
+      "travel_cost": 205.50458267856294,
+      "delay_penalty": 0.0,
+      "served_nodes": 30.0,
+      "unserved_nodes": 0.0,
+      "service_rate": 0.9999999666666678,
+      "total_episode_time": 265.40493834848996
+    }
+  ]
+}

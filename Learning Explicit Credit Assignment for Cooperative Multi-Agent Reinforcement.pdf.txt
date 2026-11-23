@@ -1,0 +1,1031 @@
+
+
+===== PAGE 1 =====
+Learning Explicit Credit Assignment for Cooperative Multi-Agent Reinforcement
+Learning via Polarization Policy Gradient
+Wubing Chen1, Wenbin Li1 *, Xiao Liu 1, Shangdong Yang2, 1, Yang Gao1 ∗
+1State Key Laboratory for Novel Software Technology, Nanjing University, Nanjing 210023, China
+2Nanjing University of Posts and Telecommunications, Nanjing 210023, China
+wuzbingchen@gmail.com, liwenbin@nju.edu.cn, liuxiao730@outlook.com, sdyang@njupt.edu.cn, gaoy@nju.edu.cn
+Abstract
+Cooperative multi-agent policy gradient (MAPG) algorithms
+have recently attracted wide attention and are regarded as
+a general scheme for the multi-agent system. Credit as-
+signment plays an important role in MAPG and can in-
+duce cooperation among multiple agents. However, most
+MAPG algorithms cannot achieve good credit assignment be-
+cause of the game-theoretic pathology known as centralized-
+decentralized mismatch. To address this issue, this paper
+presents a novel method, M
+ulti-Agent P olarization P olicy
+Gradient (MAPPG). MAPPG takes a simple but efficient po-
+larization function to transform the optimal consistency of
+joint and individual actions into easily realized constraints,
+thus enabling efficient credit assignment in MAPG. Theo-
+retically, we prove that individual policies of MAPPG can
+converge to the global optimum. Empirically, we evaluate
+MAPPG on the well-known matrix game and differential
+game, and verify that MAPPG can converge to the global
+optimum for both discrete and continuous action spaces. We
+also evaluate MAPPG on a set of StarCraft II micromanage-
+ment tasks and demonstrate that MAPPG outperforms the
+state-of-the-art MAPG algorithms.
+1 Introduction
+Multi-agent reinforcement learning (MARL) is a critical
+learning technology to solve sequential decision problems
+with multiple agents. Recent developments in MARL have
+heightened the need for fully cooperative MARL that max-
+imizes a reward shared by all agents. Cooperative MARL
+has made remarkable advances in many domains, includ-
+ing autonomous driving (Cao et al. 2021) and cooperative
+transport (Shibata, Jimbo, and Matsubara 2021). To mitigate
+the combinatorial nature (Hernandez-Leal, Kartal, and Tay-
+lor 2019) and partial observability (Omidshafiei et al. 2017)
+in MARL, centralized training with decentralized execution
+(CTDE) (Oliehoek, Spaan, and Vlassis 2008; Kraemer and
+Banerjee 2016) has become one of the mainstream settings
+for MARL, where global information is provided to promote
+collaboration in the training phase and learned policies are
+executed only based on local observations.
+Multi-agent credit assignment is a crucial challenge in
+the MARL under the CTDE setting, which refers to at-
+*Corresponding authors.
+Copyright © 2023, Association for the Advancement of Artificial
+Intelligence (www.aaai.org). All rights reserved.
+tributing a global environmental reward to the individ-
+ual agents’ actions (Zhou et al. 2020). Multiple indepen-
+dent agents can learn effective collaboration policies to ac-
+complish challenging tasks with the proper credit assign-
+ment. MARL algorithms can be divided into value-based
+and policy-based. Cooperative multi-agent policy gradient
+(MAPG) algorithms can handle both discrete and contin-
+uous action spaces, which is the focus of our study. Dif-
+ferent MAPG algorithms adopt different credit assignment
+paradigms, which can be divided into implicit and explicit
+credit assignment (Zhou et al. 2020). Solving the credit as-
+signment problem implicitly needs to represent the joint ac-
+tion value as a function of individual policies (Lowe et al.
+2017; Zhou et al. 2020; Wang et al. 2021b; Zhang et al.
+2021; Peng et al. 2021). Current state-of-the-art MAPG al-
+gorithms (Wang et al. 2021b; Zhang et al. 2021; Peng et al.
+2021) impose a monotonic constraint between the joint ac-
+tion value and individual policies. While some algorithms
+allow more expressive value function classes, the capacity
+of the value mixing network is still limited by the monotonic
+constraints (Son et al. 2019; Wang et al. 2021a). The other
+algorithms that achieve explicit credit assignment mainly
+provide a shaped reward for each individual agent’s action
+(Proper and Tumer 2012; Foerster et al. 2018; Su, Adams,
+and Beling 2021). However, there is a large discrepancy be-
+tween the performance of algorithms with explicit credit as-
+signment and algorithms with implicit credit assignment.
+In this paper, we analyze this discrepancy and pin-
+point that the centralized-decentralized mismatch hinders
+the performance of MAPG algorithms with explicit credit
+assignment. The centralized-decentralized mismatch can
+arise when the sub-optimal policies of agents could nega-
+tively affect the assessment of other agents’ actions, which
+leads to catastrophic miscoordination. Note that the issue
+of centralized-decentralized mismatch was raised by DOP
+(Wang et al. 2021b). However, the linearly decomposed
+critic adopted by DOP (Wang et al. 2021b) limits their rep-
+resentation expressiveness for the value function.
+Inspired by Polarized-V AE (Balasubramanian et al. 2021)
+and Weighted QMIX (Rashid et al. 2020), we propose
+a policy-based algorithm called M
+ulti-Agent P olarization
+Policy G radient (MAPPG) for learning explicit credit as-
+signment to address thecentralized-decentralized mismatch.
+MAPPG encourages increasing the distance between the
+The Thirty-Seventh AAAI Conference on Artificial Intelligence (AAAI-23)
+11542
+
+===== PAGE 2 =====
+global optimal joint action value and the non-optimal joint
+action values while shortening the distance between multiple
+non-optimal joint action values via polarization policy gradi-
+ent. MAPPG facilitates large-scale multi-agent cooperations
+and presents a new multi-agent credit assignment paradigm,
+enabling multi-agent policy learning like single-agent policy
+learning (Wei and Luke 2016). Theoretically, we prove that
+individual policies of MAPPG can converge to the global
+optimum. Empirically, we verify that MAPPG can con-
+verge to the global optimum compared to existing MAPG
+algorithms in the well-known matrix (Son et al. 2019) and
+differential games (Wei et al. 2018). We also show that
+MAPPG outperforms the state-of-the-art MAPG algorithms
+on StarCraft II unit micromanagement tasks (Samvelyan
+et al. 2019), demonstrating its scalability in complex scenar-
+ios. Finally, the results of ablation experiments match our
+theoretical predictions.
+2 Related Work
+Implicit Credit Assignment
+In general, implicit MAPG algorithms utilize the learned
+function between the individual policies and the joint action
+values for credit assignment. MADDPG (Lowe et al. 2017)
+and LICA (Zhou et al. 2020) learn the individual policies by
+directly ascending the approximate joint action value gra-
+dients. The state-of-the-art MAPG algorithms (Wang et al.
+2021b; Zhang et al. 2021; Peng et al. 2021; Su, Adams,
+and Beling 2021) introduce the idea of value function de-
+composition (Sunehag et al. 2018; Rashid et al. 2018; Son
+et al. 2019; Wang et al. 2021a; Rashid et al. 2020) into
+the multi-agent actor-critic framework. DOP (Wang et al.
+2021b) decomposes the centralized critic as a weighted lin-
+ear summation of individual critics that condition local ac-
+tions. FOP (Zhang et al. 2021) imposes a multiplicative form
+between the optimal joint policy and the individual opti-
+mal policy, and optimizes both policies based on maximum
+entropy reinforcement learning objectives. FACMAC (Peng
+et al. 2021) proposes a new credit-assignment actor-critic
+framework that factors the joint action value into individ-
+ual action values and uses the centralized gradient estimator
+for credit assignment. VDAC (Su, Adams, and Beling 2021)
+achieves the credit assignment by enforcing the monotonic
+relationship between the joint action values and the shaped
+individual action values. Although these algorithms allow
+more expressive value function classes, the capacity of the
+value mixing network is still limited by the monotonic con-
+straints, and this claim will be verified in our experiments.
+Explicit Credit Assignment
+In contrast to implicit algorithms, explicit MAPG algo-
+rithms provide the contribution of each individual agent’s
+action, and the individual actor is updated by following
+policy gradients tailored by the contribution. COMA (Fo-
+erster et al. 2018) evaluates the contribution of individual
+agents’ actions by using the centralized critic to compute
+an agent-specific advantage function. SQDDPG (Wang et al.
+2020) proposes a local reward algorithm, Shapley Q-value,
+which takes the expectation of marginal contributions of
+all possible coalitions. Although explicit algorithms pro-
+vide valuable insights into the assessment of the contribu-
+tion of individual agents’ actions to the global reward and
+thus can significantly facilitate policy optimization, the is-
+sue of centralized-decentralized mismatch hinders their per-
+formance in complex scenarios. Compared to explicit algo-
+rithms, the proposed MAPPG can theoretically tackle the
+challenge of centralized-decentralized mismatch and exper-
+imentally outperforms existing MAPG algorithms in both
+convergence speed and final performance in challenging en-
+vironments.
+3 Background
+Dec-POMDP
+A decentralized partially observable Markov decision pro-
+cess (Dec-POMDP) is a tuple⟨S,U,r,P,Z,O,n,γ ⟩, where
+n agents identified by a∈ A≡{1,...,n } choose sequen-
+tial actions, s ∈ S is the state. At each time step, each
+agent chooses an action ua ∈ U, forming a joint action
+u∈ U ≡ Un which induces a transition in the environ-
+ment according to the state transition functionP (s′|s,u) :
+S×U×S→ [0, 1]. Agents receive the same reward ac-
+cording to the reward functionr(s,u) : S×U→ R. Each
+agent has an observation function O(s,a ) : S×A→ Z,
+where a partial observation za∈ Z is drawn. γ∈ [0, 1) is
+the discount factor. Throughout this paper, we denote joint
+quantities over agents in bold, quantities with the subscript
+a denote quantities over agent a, and joint quantities over
+agents other than a given agent a with the subscript −a.
+Each agent tries to learn a stochastic policy for action se-
+lection:πa : T×U→ [0, 1], where τa∈ T ≡ (Z×U )∗
+is an action-observation history for agent a. MARL agents
+try to maximize the cumulative return, Rt =P∞
+t=1γt−1rt,
+wherert is the reward obtained from the environment by all
+agents at stept.
+Multi-Agent Policy Gradient
+We first provide the background on single-agent policy gra-
+dient algorithms, and then introduce multi-agent policy gra-
+dient algorithms. In single-agent continuous control tasks,
+policy gradient algorithms (Sutton et al. 1999) optimise a
+single agent’s policy, parameterised byθ, by performing gra-
+dient ascent on an estimator of the expected discounted to-
+tal reward∇θJ (π) = Eπ
+
+∇θ logπ (u|s)R0
+, where the
+gradient is estimated from trajectories sampled from the en-
+vironment. Actor-critic (Sutton et al. 1999; Konda and Tsit-
+siklis 1999; Schulman et al. 2016) algorithms use an esti-
+mated action value instead of the discounted return to solve
+the high variance caused by the likelihood-ratio trick in the
+above formula. The gradient of the policy for a single-agent
+setting can be defined as:
+∇θJ (π) = Eπ [∇θ logπ (u|s)Q (s,u )]. (1)
+A natural extension to multi-agent settings leads to the
+multi-agent stochastic policy gradient theorem with agent
+a’s policy parameterized by θa (Foerster et al. 2018; Wei
+11543
+
+===== PAGE 3 =====
+et al. 2018), shown below:
+∇θJ (π) =Eπ
+"X
+a
+∇θa logπa (ua|τa)Q (s,u)
+#
+=
+X
+s
+dπ (s)
+X
+a
+X
+ua
+πa (ua|τa)∇θa logπa (ua|τa)
+X
+u−a
+π−a (u−a|τ−a)Q (s,u). (2)
+wheredπ (s) is a discounted weighting of states encountered
+starting ats0 and then followingπ. COMA implements the
+multi-agent stochastic policy gradient theorem by replacing
+the action-value function with the counterfactual advantage,
+reducing variance, and not changing the expected gradient.
+4 Analysis
+In the multi-agent stochastic policy gradient theorem,
+agent a learns the policy by directly ascending the ap-
+proximate marginal joint action value gradient for each
+ua ∈ U, which is scaled by Ma(s,ua,π−a) =P
+u−a
+π−a (u−a|τ−a)Q (s,u) (see Equation (2)). For-
+mally, suppose that the optimal and a non-optimal joint
+action under s are u∗ and u# respectively, that is,
+Q(s,u∗) > Q(s,u#). If it holds that Ma(s,u∗
+a,π−a) <
+Ma(s,u #
+a,π−a) due to the exploration or suboptimality of
+other agents’ policies, we possibly have that πa(u∗
+a| τa) <
+πa(u#
+a | τa). The decentralized policy of agent a is up-
+dated by following policy gradients tailored by the central-
+ized critic, which are negatively affected by other agents’
+policies. This issue is called centralized-decentralized mis-
+match (Wang et al. 2021b). We will show that centralized-
+decentralized mismatch occurs in practice for the state-of-
+the-art MAPG algorithms on the well-known matrix game
+and differential game in the experimental section.
+5 The Proposed Method
+In this section, we first propose a novel multi-agent actor-
+critic method, MAPPG, which learns explicit credit assign-
+ment. Then we mathematically prove that MAPPG can ad-
+dress the issue of centralized-decentralized mismatch and
+the individual policies of MAPPG can converge to the global
+optimum.
+The Polarization Policy Gradient
+In the multi-agent stochastic policy gradient theorem, the
+scale of the policy gradient of agent a is impacted by
+the policies of other agents, which leads to centralized-
+decentralized mismatch. A straightforward solution is to
+make the policies of other agents optimal. Learning other
+agents’ policies depends on the convergence of agent a’s
+policy to the optimal. If agent a’s policy converges to the
+optimal, there seems no need to compute the scale of the
+policy gradient of agent a. Therefore, we cannot solve the
+problem of centralized-decentralized mismatch from a pol-
+icy perspective, we seek to address it from the joint action
+value perspective.
+We define polarization joint action values to replace orig-
+inal joint action values. The polarization joint action val-
+ues resolve centralized-decentralized mismatch by increas-
+ing the distance between the values of the global optimal
+joint action and the non-optimal joint actions while shorten-
+ing the distance between the values of multiple non-optimal
+joint actions. By polarization, the influence of other agents’
+non-optimal policies can be largely eliminated. For conve-
+nience, the following discussion in the section will assume
+that the action values are fixed in a given states. In later sec-
+tions, we will see how the joint action values are updated. If
+the optimal joint actionu∗ in states can be identified, then
+the polarization policy gradient is:
+∇θJ (π) = Eπ
+"X
+a
+∇θa logπa (ua|τa)QPPG (s,u)
+#
+,
+where
+QPPG (s,u) =
+
+1 ifu =u∗
+0 otherwise (3)
+is the polarization joint action value function. For each
+agent, only the gradient of the component of the optimal ac-
+tion is greater than 0, whereby the optimal policy can be
+learned. However, we cannot traverse all state-action pairs
+to find the optimal joint action u∗ in complex scenarios;
+therefore, a soft version of the polarization joint action value
+function is defined as:
+QPPG (s,u) = exp (αQ (s,u)), (4)
+where α > 0 denotes the enlargement factor determining
+the distance between the optimal and the non-optimal joint
+action values. However, Equation (4) cannot work in prac-
+tice. On the one hand, the result of the exponential function
+is easy to overflow. On the other hand, if∀u, Q(s,u)≤ 0,
+the polarization joint action valuesQPPG (s,u) are between
+0 and 1. To address the polarization failure, a baseline is in-
+troduced as follows:
+QPPG (s,u) = 1
+β exp (α (Q (s,u)−Q (s,ucurr))), (5)
+whereβ is a factor which can prevent exponential gradient
+explosion anducurr = [arg maxua πa(ua|τa)]n
+a=1. By pro-
+viding a baseline, the policy is guided to pay more attention
+to the joint actions of{u : Q (s,u)>Q (s,ucurr)}, which
+derives a self-improving method. Our method looks similar
+to COMA , but they are different in nature. The baseline
+in our MAPPG can help solve the centralized-decentralized
+mismatch. However, the baseline in COMA is introduced to
+achieve difference rewards.
+Adopting polarization joint action values, MAPPG solves
+the credit assignment issue by applying the following polar-
+ization policy gradients:
+∇θJ (π) = 1
+β Eπ
+"X
+a
+∇θa logπa (ua|τa)QPPG (s,u)
+#
+= 1
+β
+X
+s
+dπ (s)
+X
+a
+X
+ua
+πa (ua|τa)∇θa logπa (ua|τa)
+X
+u−a
+π−a (u−a|s)QPPG (s,ua,u−a). (6)
+11544
+
+===== PAGE 4 =====
+From Equation (6), we can see that the gradient for ac-
+tion ua at state s is scaled by MPPG
+a (s,ua,π−a) =P
+u−a
+π−a (u−a|s)QPPG (s,ua,u−a), which is the po-
+larization marginal joint action value function.
+The power function is adopted because it has two prop-
+erties. (i) The second-order gradient of the power func-
+tion is greater than 0, so it can increase the distance be-
+tween the global optimal joint action value and the non-
+optimal joint action values, while shortening the distance
+between multiple non-optimal joint action values. (ii) For all
+u∈{u : Q (s,u) < Q(s,ucurr)}, the corresponding po-
+larized joint action valuesQPPG (s,u) are between 0 and 1,
+which makes the policy learning focus more on the domain
+{u :Q (s,u)>Q (s,ucurr)} in states.
+Theoretical Proof
+In this subsection, we introduce the joint policy improve-
+ment for MAPPG and mathematically prove that the indi-
+vidual policies of MAPPG can converge to the global op-
+timum. For convenience, this section will be discussed in
+a fully observable environment, where each agent chooses
+actions based on the state instead of the action-observation
+history. To ensure the uniqueness of the optimal joint action,
+we make the following assumptions.
+Assumption 1. The joint action value functionQ(s,u) has
+one unique maximizing joint action for alls∈S and|U|<
+∞.
+First, we mathematically prove that each maximizing in-
+dividual action of the polarization marginal joint action
+value function is consistent with the maximizing joint ac-
+tion’s corresponding component of the joint action value
+function in Theorem 1.
+Theorem 1 (Optimality Consistency). Let π be a joint
+policy. Let u∗ = arg max u∈UQ(s,u) and usec =
+arg maxu∈(U−{u∗})Q(s,u). If it holds that ∀a∈ A,α >
+logπ−a(u∗
+−a|s)
+Q(s,usec)−Q(s,u∗) withα as defined in Equation (5), then we
+have that for all individual actionsu′
+a:
+MPPG
+a (s,u′
+a,π−a)<M PPG
+a (s,u∗
+a,π−a),
+whereu′
+a̸=u∗
+a.
+Proof. See Appendix A.
+Theorem 1 reveals an important insight. The enlarge-
+ment factor regulates the distance between the optimal
+and non-optimal action values, and MAPPG tackles the
+challenge of centralized-decentralized mismatch with α >
+logπ−a(u∗
+−a|s)
+Q(s,usec)−Q(s,u∗).
+Second, first-order optimization algorithms for training
+deep neural networks are difficult to ensure global conver-
+gence (Goodfellow, Bengio, and Courville 2016). Hence,
+one assumption on policy parameterizations is required for
+our analysis.
+Assumption 2. Given the function ψ : S× U → R,
+agenta’s policy πa(·|s) is the corresponding vector of ac-
+tion probabilities given by the softmax parameterization for
+allu′
+a∈U, i.e.,
+πa(ua|s) = exp (ψs,ua )
+P
+u′
+a∈U exp
+ 
+ψs,u′
+a
+,
+whereψs,ua≡ψ(s,ua) with|U|<∞.
+Then, following the standard optimization result of Theo-
+rem 10 (Agarwal et al. 2021), we prove that the single agent
+policy converges to the global optimum for the softmax pa-
+rameterization in Lemma 1.
+Lemma 1 (Individual Policy Improvement). Let the joint
+action values remain unchanged during the policy improve-
+ment. Letπ0 = [π0
+a]n
+a=1 be the initial joint policy and ψs,a
+be the the corresponding vector ofψs,ua for allua∈U. The
+update for agent a in state s at iteration t with the stepsize
+η≤ (1−γ)3
+8 is defined as follows:
+ψt+1
+s,a =ψt
+s,a +η∇ψt
+s,aVt
+s,a
+ 
+πt
+a,π0
+−a
+
+,
+where
+Vt
+s,a
+ 
+πt
+a,π0
+−a
+
+=
+X
+ua
+πt
+a (ua|s)MPPG
+a
+ 
+s,ua,π0
+−a
+
+.
+Then, we have that πt
+a → π∗
+a as t → ∞, where
+arg maxuaπ∗
+a(ua|s) = arg maxuaMPPG
+a
+ 
+s,ua,π0
+−a
+
+.
+Proof. See Appendix B.
+Finally, we prove that optimal individual policies can be
+attained as long as MAPPG applies individual policy im-
+provement to all agents in Theorem 2.
+Theorem 2 (Joint Policy Improvement). Let the joint
+action values remain unchanged during the policy im-
+provement. Let u∗ = arg max u∈UQ(s,u) and usec =
+arg maxu∈(U−{u∗})Q(s,u). Let the joint policy at it-
+eration t be πt = [ πt
+a]n
+a=1. If individual policy im-
+provement is applied to each agent a ∈ A and α >
+maxa∈A
+logπ0
+−a(u∗
+−a|s)
+Q(s,usec)−Q(s,u∗), then we have that πt→π∗ as
+t→∞, where arg maxuπ∗(u|s) = arg maxuQ (s,u) .
+Proof. See Appendix B.
+Although Theorem 2 requires that when optimizing the
+policy of a single agent, other agents’ policies should be
+maintained asπ0
+−a. MAPPG replacesπ0
+−a with the current
+policiesπt
+−a of other agents in practice, which is a more ef-
+ficient sampling strategy. This change does not compromise
+optimality empirically.
+MAPPG Architecture
+The overall framework of MAPPG is illustrated in Figure
+1. For each agent a, there is an individual actor πa(ua|τa)
+parameterized by θa. We denote the joint policy as π =
+[πa]n
+a=1. Two centralized components are criticsQ(s,u) and
+target criticsQtarget(s,u), parameterized byϕ andϕ−.
+At the execution phase, each agent selects actions
+w.r.t. the current policy and exploration based on the
+11545
+
+===== PAGE 5 =====
+Decen
+tralized Execution
+All Ag
+ents
+Softm
+ax
+or
+Gaussian
+Env
+Explore
+ 
+or
+Exploit
+Target C
+ritics
+1-step TD 
+Loss
+Cr
+itics
+Gradient
+Desc
+ent
+Critics T
+raining Actors Training
+Cr
+iticsTarget C
+ritics
+Parameters 
+GRUMLP MLP
+Target C
+ritic 1 Target C
+ritic 2
+Polariz
+ation
+ Samp
+ling
+Pessimi
+stic Bound
+MAPPG L
+oss
+Gradient
+Asce
+nt
+Centraliz
+ed Training
+Upd
+ate
+Enlargem
+ent Factor
+Arg max
+Figure 1: MAPPG framework.
+local observation in a decentralized manner. By inter-
+acting with the environment, the transition tuple e =
+(s, [za]n
+a=1,u,r,s′, [z′
+a]n
+a=1) is added to the buffer.
+At the training phase, mini-batches of experiences are
+sampled from the buffer uniformly at random. We train the
+parameters of critics to minimise the 1-step TD loss by de-
+scending their gradients according to:
+∇ϕLtd (ϕ) =∇ϕEe∼D
+h
+(y−Q (s,u))2
+i
+, (7)
+where y = r +γQtarget (s′, arg maxu′π (u′|τ′)). In the
+proof of Theorem 2, some strong constraints need to be sat-
+isfied. To derive a practical algorithm, we must make ap-
+proximations. First, MAPPG adopts target critics for indi-
+vidual policy improvement as an implementation of fixed
+joint action values. Second, the estimation of the Q-value
+has aleatoric uncertainty and epistemic uncertainty. Without
+a constraint, maximization ofJ(π) with polarization would
+lead to an excessively large policy update; hence, we now
+consider how to modify the objective. We apply the pes-
+simistic bound of QPPG with the help of two target critics
+{Qtarget
+1 , Qtarget
+2 } and penalize changes to the policy that
+makeQPPG larger than L. We train two critics, which are
+learned with the same training setting except for the initial-
+ization parameters. The two target critics share the same net-
+work structure as that of the two critics, and the parameters
+of the two target critics are periodically synchronized with
+those of the two critics, respectively. We train the parameters
+of actors to maximize the expected polarization Q-function
+which is called the MAPPG loss by ascending their gradi-
+ents according to:
+∇θJ (π) = 1
+β Eπ
+"X
+a
+∇θa logπa (ua|τa)
+min
+
+ˆQPPG (s,u), L
+i
+, (8)
+where
+ˆQPPG (s,u) = exp
+
+α
+
+min
+k∈{1,2}
+Qtarget
+k (s,u)
+− max
+k∈{1,2}
+Qtarget
+k (s,ucurr)
+
+.
+To prevent vanishing gradients caused by the increasing ac-
+tion probability with an inappropriate learning rate in prac-
+tice, the gradients for the joint action u are set to 0 if
+ˆQPPG (s,u) < 1 or∀a,πa(ua|τa) > P where P ≥ 0.5,
+which is called the policy gradient clipping. For complete-
+ness, we summarize the training of MAPPG in the Algo-
+rithm 1. More details are included in Appendix C.
+6 Experiments
+In this section, first, we empirically study the optimality of
+MAPPG for discrete and continuous action spaces. Then,
+in StarCraft II, we demonstrate that MAPPG outperforms
+state-of-the-art MAPG algorithms. By ablation studies, we
+verify the effectiveness of our polarization joint action val-
+ues and the pessimistic bound ofQPPG . We further perform
+an ablation study to verify the effect of different enlargement
+factors on convergence to the optimum. In matrix and differ-
+ential games, the worst result in the five training runs with
+different random seeds is selected to exclude the influence of
+random initialization parameters of the neural network. All
+the learning curves are plotted based on five training runs
+with different random seeds using mean and standard devia-
+tion in StarCraft II and the ablation experiment.
+11546
+
+===== PAGE 6 =====
+Algorithm 1: MAPPG
+1: forepisode = 1 tomax training episode do
+2: Initialize the environment
+3: fort = 1 tomax episode length do
+4: For all agents, get the current state s and obser-
+vations [za]n
+a=1, choose a joint action u w.r.t. the
+current policy and exploration
+5: Execute the joint actionu, observe a rewardr, and
+get the next states′ and observations [z′
+a]n
+a=1
+6: Add the transition (s, [za]n
+a=1,u,r,s′, [z′
+a]n
+a=1) to
+the bufferD
+7: iftime
+to update actors and critics then
+8: Sample a random minibatch ofK samples from
+D
+9: Updateϕ by descending their gradients accord-
+ing to Equation (7)
+10: Updateθ by ascending their gradients according
+to Equation (8) with the policy gradient clipping
+11: end if
+12: iftime to update target critics then
+13: Replace target parameters ϕ−
+i ← ϕi for i ∈
+{1, 2}
+14: end if
+15: end for
+16: end for
+Matrix Game and Differential Game
+In the discrete matrix and continuous differential games,
+we investigate whether MAPPG can converge to optimal
+compared with existing MAPG algorithms, including MAD-
+DPG (Lowe et al. 2017), COMA (Foerster et al. 2018), DOP
+(Wang et al. 2021b), FACMAC (Peng et al. 2021), and FOP
+(Zhang et al. 2021). The two games have one common char-
+acteristic: some destructive penalties are around with the op-
+timal solution (Zhang et al. 2021), which triggers the issue
+of the centralized-decentralized mismatch.
+Matrix Game The matrix game is shown in Table 1 (a),
+which is the modified matrix game proposed by QTRAN
+(Son et al. 2019). This matrix game captures a cooperative
+multi-agent task where we have two agents with three ac-
+tions each. We show the results of COMA, DOP, FACMAC,
+FOP, and MAPPG over 10k steps, as in Table 1 (b) to 1 (f).
+MAPPG uses anϵ-greedy policy whereϵ is annealed from 1
+to 0.05 over 10k steps. MAPPG is the only algorithm that
+can successfully converge to the optimum. The results of
+these algorithms on the original matrix game proposed by
+QTRAN (Son et al. 2019), and more experiments and de-
+tails are included in Appendix C.
+Differential Game The differential game is the modifica-
+tion of the Max of Two Quadratic (MTQ) Game from pre-
+vious literature (Zhang et al. 2021). This is a single-state
+continuous game for two agents, and each agent has a one-
+dimensional bounded continuous action space ([-10, 10])
+with a shared reward function. In Equation (9), u1 and u2
+are the actions of two agents and r(u1,u 2) is the shared re-
+ward function received by two agents. There is a sub-optimal
+u1
+u2 A B C
+A 15 -12 -12
+B -12 10 10
+C -12 10 10
+(a) Payoff of matrix game
+π1
+π2 0.0(A) 0.8(B) 0.2(C)
+0.0(A) 14.9 -11.8 -11.8
+0.7(B) -12.1 9.9 9.9
+0.3(C) -12.0 9.9 9.9
+(b) COMA:π1,π 2,Q
+π1
+π2 0.0(A) 0.7(B) 0.3(C)
+0.0(A) -32.5 -11.2 -11.2
+0.9(B) -11.4 9.9 9.9
+0.1(C) -11.5 9.9 9.9
+(c) DOP:π1,π 2,Q
+π1
+π2 0.0(A) 0.5(B) 0.5(C)
+0.0(A) -11.5 -11.5 -11.5
+0.5(B) -11.5 9.9 9.9
+0.5(C) -11.5 9.9 10.0
+(d) FACMAC:π1,π 2,Q
+π1
+π2 0.0(A) 0.0(B) 1.0(C)
+0.0(A) 9.1 -4.4 -7.4
+0.0(B) -5.3 9.0 5.0
+1.0(C) -2.6 9.0 9.7
+(e) FOP:π1,π 2,Q
+π1
+π2 0.4(A) 0.3(B) 0.3(C)
+0.4(A) 15.2 -12.2 -12.2
+0.3(B) -12.0 10.0 10.0
+0.3(C) -12.0 10.0 10.0
+(f) MAPPG:π1,π 2,Q
+Table 1: The cooperative matrix game. Boldface means the
+optimal/greedy actions from individual policies.
+(a) MADDPG
+ (b) FACMAC
+(c) FOP
+ (d) MAPPG
+Figure 2: Learning paths of different algorithms in the MTQ
+game. The horizontal and vertical axes representu1 andu2,
+respectively. All the points on a given contour line are all at
+the same joint action values. The shallow red and dark red
+indicate the start and end of the learning paths, respectively.
+solution 0 at (-5, -5) and a global optimal solution 5 at (5, 5).
+
+
+
+f1 = 0.8×
+h
+−
+ u1+5
+5
+2
+−
+ u2+5
+5
+2i
+f2 = 1×
+h
+−
+ u1−5
+1
+2
+−
+ u2−5
+1
+2i
++ 5
+r (u1,u 2) = max (f1,f 2)
+. (9)
+In MTQ, we compare MAPPG against existing multi-agent
+policy gradient algorithms, i.e., MADDPG, FACMAC, and
+FOP. Gaussian is used as the action distribution by MAPPG
+11547
+
+===== PAGE 7 =====
+(a) 3s vs 4z
+ (b) 3s vs 5z
+ (c) 5m vs 6m
+ (d) 8m vs 9m
+(e) 10m vs 11m
+ (f) 27m vs 30m
+ (g) MMM2
+ (h) 3s5z vs 3s6z
+Figure 3: Learning curves of all algorithms in eight maps of StarCraft II.
+as in SAC (Haarnoja et al. 2018), and the mean of the Gaus-
+sian distribution is plotted. MAPPG uses a similar explo-
+ration strategy as in FACMAC, where actions are sampled
+from a uniform random distribution over valid actions up
+to 10k steps and then from the learned action distribution
+with Gaussian noise. We use Gaussian noise with mean 0
+and standard deviation 1. The learning paths (20k steps) of
+all algorithms are shown as red dots in Figure 2 (a) to 2
+(d). MAPPG consistently converges to the global optimum
+while all other baselines fall into the sub-optimum. MAD-
+DPG can estimate r(u1,u 2) accurately, but fail to converge
+to the global optimum. However, the regular decomposed
+actor-critic algorithms (FACMAC and FOP) converge to the
+sub-optimum and also have limitations to expressr(u1,u 2).
+More details of the MTQ game experiments are included in
+Appendix C.
+StarCraft II
+We evaluate MAPPG on the challenging StarCraft Multi-
+Agent Challenge (SMAC) benchmark (Samvelyan et al.
+2019) in eight maps, including 3s
+vs 4z, 3s vs 5z,
+5m vs 6m, 8m vs 9m, 10m vs 11m, 27m vs 30m, MMM2
+and 3s5z vs 3s6z. The baselines include 5 state-of-the-art
+MAPG algorithms (COMA, MADDPG, stochastic DOP,
+FOP, FACMAC). MAPPG uses anϵ-greedy policy in which
+ϵ is annealed from 1 to 0.05 over 50k steps. Results are
+shown in Figure 3 and MAPPG outperforms all the base-
+lines in the final performance, which indicates that MAPPG
+can jump out of sub-optima. More details of the StarCraft II
+experiments are included in Appendix C.
+Ablation Studies
+In Figure 4 (a), the comparison between the MAPPG and
+MAPPG without the pessimistic bound demonstrates the
+importance of making conservative policy improvements,
+(a) 3s vs 4z
+ (b) MTQ
+Figure 4: Ablations on the SMAC benchmark and MTQ
+game.
+which can alleviate the problem of excessively large pol-
+icy updates caused by inaccurate value function estimation.
+The comparison between the MAPPG and MAPPG without
+the polarization demonstrates the contribution of polariza-
+tion joint action values to global convergence. In Figure 4
+(b), we observe that MAPPG can converge to a policy that
+can obtain a reward closer to the optimal reward as the in-
+crease of the enlargement factor. The discrepancy between
+the learning curve of α ={1, 2} and other learning curves
+indicates the influence of polarization.
+7 Conclusion
+This paper presents MAPPG, a novel multi-agent actor-critic
+framework that allows centralized end-to-end training and
+efficiently learns to do credit assignment properly to enable
+decentralized execution. MAPPG takes advantage of the po-
+larization joint action value that efficiently guarantees the
+consistency between individual optimal actions and the joint
+optimal action. Empirically, MAPPG achieves competitive
+results compared with state-of-the-art MAPG baselines for
+large-scale multi-agent cooperations.
+11548
+
+===== PAGE 8 =====
+Acknowledgments
+This work is supported in part by Science and Technol-
+ogy Innovation 2030 – “New Generation Artificial Intelli-
+gence” Major Project (2018AAA0100905), National Nat-
+ural Science Foundation of China (62192783, 62106100,
+62206133), Primary Research & Developement Plan of
+Jiangsu Province (BE2021028), Jiangsu Natural Science
+Foundation (BK20221441), Shenzhen Fundamental Re-
+search Program (2021Szvup056), CAAI-Huawei Mind-
+Spore Open Fund, State Key Laboratory of Novel Software
+Technology Project (KFKT2022B12), Jiangsu Provincial
+Double-Innovation Doctor Program (JSSCBS20210021,
+JSSCBS20210539), and in part by the Collaborative Inno-
+vation Center of Novel Software Technology and Industri-
+alization. The authors would like to thank the anonymous
+reviewers for their helpful advice and support.
+References
+Agarwal, A.; Kakade, S. M.; Lee, J. D.; and Mahajan, G.
+2021. On the Theory of Policy Gradient Methods: Opti-
+mality, Approximation, and Distribution Shift. Journal of
+Machine Learning Research, 22(98): 1–76.
+Balasubramanian, V .; Kobyzev, I.; Bahuleyan, H.; Shapiro,
+I.; and Vechtomova, O. 2021. Polarized-V AE: Proximity
+Based Disentangled Representation Learning for Text Gen-
+eration. In Conference of the European Chapter of the As-
+sociation for Computational Linguistics (EACL), 416–423.
+Cao, J.; Wang, X.; Darrell, T.; and Yu, F. 2021. Instance-
+Aware Predictive Navigation in Multi-Agent Environments.
+In IEEE International Conference on Robotics and Automa-
+tion (ICRA), 5096–5102.
+Foerster, J. N.; Farquhar, G.; Afouras, T.; Nardelli, N.; and
+Whiteson, S. 2018. Counterfactual Multi-Agent Policy Gra-
+dients. In AAAI Conference on Artifcial Intelligence (AAAI),
+2974–2982.
+Goodfellow, I.; Bengio, Y .; and Courville, A. 2016. Deep
+Learning. http://www.deeplearningbook.org. Accessed:
+2022-5-10.
+Haarnoja, T.; Zhou, A.; Abbeel, P.; and Levine, S. 2018.
+Soft Actor-Critic: Off-Policy Maximum Entropy Deep Re-
+inforcement Learning with a Stochastic Actor. In Inter-
+national Conference on Machine Learning (ICML), 1856–
+1865.
+Hernandez-Leal, P.; Kartal, B.; and Taylor, M. E. 2019. A
+survey and critique of multiagent deep reinforcement learn-
+ing. Autonomous Agents and Multi-Agent Systems, 33(6):
+750–797.
+Konda, V . R.; and Tsitsiklis, J. N. 1999. Actor-Critic Al-
+gorithms. In Advances in Neural Information Processing
+Systems (NeurIPS), 1008–1014.
+Kraemer, L.; and Banerjee, B. 2016. Multi-agent reinforce-
+ment learning as a rehearsal for decentralized planning.Neu-
+rocomputing, 190: 82–94.
+Lowe, R.; Wu, Y .; Tamar, A.; Harb, J.; Abbeel, P.; and
+Mordatch, I. 2017. Multi-Agent Actor-Critic for Mixed
+Cooperative-Competitive Environments. In Advances in
+Neural Information Processing Systems (NeurIPS), 6379–
+6390.
+Oliehoek, F. A.; Spaan, M. T. J.; and Vlassis, N. 2008. Opti-
+mal and Approximate Q-value Functions for Decentralized
+POMDPs. Journal of Artificial Intelligence Research, 32:
+289–353.
+Omidshafiei, S.; Pazis, J.; Amato, C.; How, J. P.; and Vian,
+J. 2017. Deep Decentralized Multi-task Multi-Agent Rein-
+forcement Learning under Partial Observability. In Inter-
+national Conference on Machine Learning (ICML), 2681–
+2690.
+Peng, B.; Rashid, T.; de Witt, C. S.; Kamienny, P.; Torr,
+P. H. S.; Boehmer, W.; and Whiteson, S. 2021. FAC-
+MAC: Factored Multi-Agent Centralised Policy Gradients.
+In Advances in Neural Information Processing Systems
+(NeurIPS), 12208–12221.
+Proper, S.; and Tumer, K. 2012. Modeling difference re-
+wards for multiagent learning. In International Conference
+on Autonomous Agents and Multiagent Systems (AAMAS) ,
+1397–1398.
+Rashid, T.; Farquhar, G.; Peng, B.; and Whiteson, S. 2020.
+Weighted QMIX: Expanding Monotonic Value Function
+Factorisation for Deep Multi-Agent Reinforcement Learn-
+ing. In Advances in Neural Information Processing Systems
+(NeurIPS), 10199–10210.
+Rashid, T.; Samvelyan, M.; Schroeder, C.; Farquhar, G.; Fo-
+erster, J.; and Whiteson, S. 2018. QMIX: Monotonic Value
+Function Factorisation for Deep Multi-Agent Reinforcement
+Learning. In International Conference on Machine Learning
+(ICML), 4295–4304.
+Samvelyan, M.; Rashid, T.; de Witt, C. S.; Farquhar, G.;
+Nardelli, N.; Rudner, T. G. J.; Hung, C.; Torr, P. H. S.;
+Foerster, J. N.; and Whiteson, S. 2019. The StarCraft
+Multi-Agent Challenge. In International Conference on Au-
+tonomous Agents and Multiagent Systems (AAMAS), 2186–
+2188.
+Schulman, J.; Moritz, P.; Levine, S.; Jordan, M. I.; and
+Abbeel, P. 2016. High-Dimensional Continuous Control
+Using Generalized Advantage Estimation. In International
+Conference on Learning Representations (ICLR).
+Shibata, K.; Jimbo, T.; and Matsubara, T. 2021. Deep re-
+inforcement learning of event-triggered communication and
+control for multi-agent cooperative transport. In IEEE Inter-
+national Conference on Robotics and Automation (ICRA) ,
+8671–8677.
+Son, K.; Kim, D.; Kang, W. J.; Hostallero, D.; and Yi, Y .
+2019. QTRAN: Learning to Factorize with Transforma-
+tion for Cooperative Multi-Agent Reinforcement Learning.
+In International Conference on Machine Learning (ICML),
+5887–5896.
+Su, J.; Adams, S. C.; and Beling, P. A. 2021. Value-
+Decomposition Multi-Agent Actor-Critics. In AAAI Con-
+ference on Artifcial Intelligence (AAAI), 11352–11360.
+Sunehag, P.; Lever, G.; Gruslys, A.; Czarnecki, W. M.; Zam-
+baldi, V . F.; Jaderberg, M.; Lanctot, M.; Sonnerat, N.; Leibo,
+J. Z.; Tuyls, K.; and Graepel, T. 2018. Value-Decomposition
+11549
+
+===== PAGE 9 =====
+Networks For Cooperative Multi-Agent Learning Based On
+Team Reward. In International Conference on Autonomous
+Agents and Multiagent Systems (AAMAS), 2085–2087.
+Sutton, R. S.; McAllester, D. A.; Singh, S.; and Mansour, Y .
+1999. Policy Gradient Methods for Reinforcement Learn-
+ing with Function Approximation. In Advances in Neural
+Information Processing Systems (NeurIPS), 1057–1063.
+Wang, J.; Ren, Z.; Liu, T.; Yu, Y .; and Zhang, C. 2021a.
+QPLEX: Duplex Dueling Multi-Agent Q-Learning. InInter-
+national Conference on Learning Representations (ICLR).
+Wang, J.; Zhang, Y .; Kim, T.; and Gu, Y . 2020. Shapley
+Q-Value: A Local Reward Approach to Solve Global Re-
+ward Games. In AAAI Conference on Artifcial Intelligence
+(AAAI), 7285–7292.
+Wang, Y .; Han, B.; Wang, T.; Dong, H.; and Zhang, C.
+2021b. DOP: Off-Policy Multi-Agent Decomposed Policy
+Gradients. In International Conference on Learning Repre-
+sentations (ICLR).
+Wei, E.; and Luke, S. 2016. Lenient Learning in
+Independent-Learner Stochastic Cooperative Games. Jour-
+nal of Machine Learning Research, 17(84): 1–42.
+Wei, E.; Wicke, D.; Freelan, D.; and Luke, S. 2018. Multia-
+gent Soft Q-Learning. In AAAI Spring Symposium Series.
+Zhang, T.; Li, Y .; Wang, C.; Xie, G.; and Lu, Z. 2021. FOP:
+Factorizing Optimal Joint Policy of Maximum-Entropy
+Multi-Agent Reinforcement Learning. InInternational Con-
+ference on Machine Learning (ICML), 12491–12500.
+Zhou, M.; Liu, Z.; Sui, P.; Li, Y .; and Chung, Y . Y . 2020.
+Learning Implicit Credit Assignment for Cooperative Multi-
+Agent Reinforcement Learning. In Advances in Neural In-
+formation Processing Systems (NeurIPS), 11853–11864.
+11550

@@ -1,0 +1,32 @@
+COC2A diagram findings (2026-09-26)
+
+Paper figure reference:
+- C:/Users/Lenovo/Downloads/bare_jrnl (18).tex lines 566-573 include 10.pdf as Fig. framework.
+- Line 562 says COC2A is introduced into the centralized critic, while truck/drone remain decentralized MA2C actors.
+- Lines 704-727 describe actors and rollout buffer: local observations -> FC/FC/LSTM -> truck routing/mode heads or UAV service/rendezvous/mode heads -> feasibility mask; transition <S_t,o_t,a_t,r_t,m_t,pi_t> stored in B.
+- Lines 731-734: global S_t -> embedding/Transformer (MHSA) -> mean pooling -> global state embedding z_s; z_s feeds COC2A.
+- Lines 742 onward define COC2A: Q_phi(z_s,x)=V(z_s)+w(z_s)^T x; evaluate realized Q(s,a), joint baseline b^Jnt=Q(s,pi_joint), individual counterfactual b^Ind_i=Q(s,c_i), then A_i=Q(s,a)-[psi_ind b^Ind_i + psi_joint b^Jnt].
+- Dynamic weights [psi_ind,psi_joint] = Softmax(g_omega^q(z_s,e_i^q)), q=truck/drone; g_omega is MLP, optimized by CMA-ES. Truck/drone coordination context e contains mode, normalized payload, hosting/energy/independent-flight indicators.
+
+Implementation evidence:
+- maddpg/trainer/maca2c.py lines 72-177: shared critic class MACA2CSharedCritic. Transformer input projection; 2 MHSA Transformer blocks (default d_model=128, heads=4, d_ff=256), mean pooling to z; value head v_s and action-weight head w_s; Q=v+w dot x. compute_joint_baseline and compute_individual_baseline call same Q.
+- maca2c.py lines 809-846: update computes q_sa, b_jnt, constructs mixed counterfactual pi_mixed (agent i uses policy probs, others one-hot), computes b_ind, gets psi from coordination_weight_generator.for_agent(agent_type,z_s,context), and advantage q_sa-(psi_ind*b_ind+psi_joint*b_jnt).
+- maddpg/trainer/coordination_weight.py: CoordinationWeightGenerator owns separate truck and drone CoordinationWeightNetwork MLPs. Each uses state tower + context tower + elementwise interaction -> 2-score head -> Softmax [individual,joint]. CMA-ES flattens and optimizes both networks' parameters.
+- train.py lines 670-718 instantiate shared CoordinationWeightGenerator and shared critic, pass both to every agent trainer; lines 1290-1326 run CMA-ES at episode intervals; therefore CMA-ES is an outer optimization loop around training, not an actor branch.
+
+Recommended redraw:
+1. Keep Environment top and Decentralized Actor middle-left unchanged except title MA2C actors.
+2. In lower centralized critic, replace MACA box with a larger COC2A box after Transformer+MeanPooling z_s.
+3. Inside COC2A show three parallel action inputs: a_t (executed one-hot), pi_t (joint policy), c_i=(a_-i,pi_i) (individual counterfactual). Feed each to shared linear Q head [V(z_s), w(z_s)] to output Q(s,a), b^Jnt, b^Ind_i.
+4. Add a coordination-state branch into an MLP g_omega^q: z_s plus e_i^TR/e_i^DR (mode/payload/host or battery/independent-flight) -> Softmax weights [psi_ind,psi_joint]. Feed weights into weighted baseline sum -> COC2A advantage A_i. Add a dashed outer arrow labeled CMA-ES (reward-gain fitness) to g_omega parameters.
+5. Output A_i to actor loss/policy update; critic loss uses n-step returns R_t vs Q(s,a). Keep rollout buffer feeding S,a,pi into critic/COC2A.
+
+Important naming: avoid calling the full method MACA. The paper's final method is COC2A-MA2C; MACA in the existing figure is stale and should be changed to COC2A (or COC2A credit assignment) inside the centralized critic.
+
+Generated editable vector redraw:
+- E:/python_object/VRPD/2pre_reward_Entropy_annealing_maca2c_rolloutlen/.workbuddy/COC2A_MA2C_framework_redrawn.svg
+- It is a standalone SVG suitable for AxGlyph import or conversion to PDF. It contains Environment, decentralized Truck/UAV actors, rollout buffer, Transformer centralized critic, COC2A counterfactual Q paths, coordination-state MLP/Softmax weights, CMA-ES dashed optimization arrow, weighted baseline, advantage, actor/critic updates.
+
+Original 10.pdf inspection:
+- The stale lower-right pink block is explicitly titled MACA and already contains Q_phi(z_s,a_t), b^Jnt(z_s,pi_t), b^Ind(z_s,c_i,t), plus Weight Head w(z_s) and Value Head V(z_s).
+- Therefore the minimal AxGlyph edit is to rename MACA to COC2A and add a coordination-state/g_omega branch feeding the weight combination before A_i,t. The complete redraw above makes this branch explicit and includes CMA-ES; it preserves the existing upper environment, actor, and replay-buffer structure.

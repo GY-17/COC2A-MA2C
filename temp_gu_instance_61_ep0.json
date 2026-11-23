@@ -1,0 +1,209 @@
+{
+    "metadata": {
+        "total_nodes": 20,
+        "horizon": 300,
+        "area_size_km": 15.0
+    },
+    "nodes": [
+        {
+            "id": 0,
+            "x": 7.120920430882885,
+            "y": 15.0,
+            "demand": 0.0,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 300.0,
+            "road_damaged": 0
+        },
+        {
+            "id": 1,
+            "x": 3.0722110828382894,
+            "y": 13.427676582622826,
+            "demand": 26.055020252936583,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 239.07781284726818,
+            "road_damaged": 1
+        },
+        {
+            "id": 2,
+            "x": 10.06076417027558,
+            "y": 6.873326785080954,
+            "demand": 20.502227793690807,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 229.41819938887906,
+            "road_damaged": 1
+        },
+        {
+            "id": 3,
+            "x": 0.0,
+            "y": 5.974650976421522,
+            "demand": 37.930980748037896,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 187.42804598553138,
+            "road_damaged": 0
+        },
+        {
+            "id": 4,
+            "x": 13.01309652170113,
+            "y": 5.204114316426198,
+            "demand": 39.74799078002292,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 59.27849165303259,
+            "road_damaged": 0
+        },
+        {
+            "id": 5,
+            "x": 8.802874937887703,
+            "y": 8.137085000841516,
+            "demand": 42.01642521469439,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 34.75608125530056,
+            "road_damaged": 0
+        },
+        {
+            "id": 6,
+            "x": 8.846097283877711,
+            "y": 8.331410096529119,
+            "demand": 44.94841635415725,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 110.38626964735327,
+            "road_damaged": 0
+        },
+        {
+            "id": 7,
+            "x": 5.734795112941228,
+            "y": 8.524225292931089,
+            "demand": 44.51383427758771,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 155.9218946518482,
+            "road_damaged": 0
+        },
+        {
+            "id": 8,
+            "x": 7.293423760812264,
+            "y": 8.35331688126377,
+            "demand": 47.940400758779916,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 159.25312673305172,
+            "road_damaged": 0
+        },
+        {
+            "id": 9,
+            "x": 6.144797660206745,
+            "y": 5.193149683289693,
+            "demand": 43.305146832999256,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 208.7082050641654,
+            "road_damaged": 1
+        },
+        {
+            "id": 10,
+            "x": 10.770378183730973,
+            "y": 4.032233259670647,
+            "demand": 10.077260583952366,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 100.86057987142819,
+            "road_damaged": 1
+        },
+        {
+            "id": 11,
+            "x": 8.696986801025963,
+            "y": 0.0,
+            "demand": 40.54381226365628,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 244.7179693096875,
+            "road_damaged": 0
+        },
+        {
+            "id": 12,
+            "x": 7.516433920066514,
+            "y": 13.396596189115446,
+            "demand": 23.30309285522304,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 269.7446728467906,
+            "road_damaged": 0
+        },
+        {
+            "id": 13,
+            "x": 9.11156655587282,
+            "y": 7.549945301365162,
+            "demand": 22.719996673529845,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 248.64076743654718,
+            "road_damaged": 0
+        },
+        {
+            "id": 14,
+            "x": 6.670386889732391,
+            "y": 3.2339630675691926,
+            "demand": 0.0,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 300.0,
+            "road_damaged": 0
+        },
+        {
+            "id": 15,
+            "x": 9.240560945703754,
+            "y": 13.89893166233286,
+            "demand": 35.84946326803167,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 233.04113252035762,
+            "road_damaged": 0
+        },
+        {
+            "id": 16,
+            "x": 9.306540459910797,
+            "y": 8.366446517179684,
+            "demand": 20.848132545323445,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 275.8563659492626,
+            "road_damaged": 0
+        },
+        {
+            "id": 17,
+            "x": 15.0,
+            "y": 13.71075142233422,
+            "demand": 13.085193787516607,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 180.15449327532997,
+            "road_damaged": 1
+        },
+        {
+            "id": 18,
+            "x": 11.402253774668994,
+            "y": 2.022271207497271,
+            "demand": 20.009863847099595,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 148.1786485421012,
+            "road_damaged": 1
+        },
+        {
+            "id": 19,
+            "x": 6.987365210256289,
+            "y": 6.715915233749969,
+            "demand": 30.840347102133837,
+            "is_dynamic": false,
+            "release_time": 0.0,
+            "deadline": 140.36690028158273,
+            "road_damaged": 0
+        }
+    ]
+}
